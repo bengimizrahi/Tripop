@@ -15,25 +15,30 @@
 
 @implementation Ball
 
-@synthesize identifier, sprite, type, moveStrategy, hexagrid, isBeingDestroyed;
+@synthesize identifier, node, type, moveStrategy, hexagrid, isBeingDestroyed;
 @dynamic position;
 @synthesize __verticalDist, __horizontalDist, __actualDist;
 
 - (id) initWithType:(BallType)aType {
+    
     if ((self = [super init])) {
         static int nextId = 0;
         identifier = nextId++;
         static NSString* imageFiles[] = {@"Core.png", @"RedBall.png", @"GreenBall.png", @"BlueBall.png", @"YellowBall.png"};
         type = aType;
-        sprite = [[Sprite alloc] initWithFile:imageFiles[aType]];
-        prevPosition = sprite.position;
+        if (type == BallType_FireBall) {
+            node = [[ParticleSun alloc] init];
+        } else {
+            node = [[Sprite alloc] initWithFile:imageFiles[aType]];
+        }
+        prevPosition = node.position;
         isBeingDestroyed = NO;
     }
     return self;
 }
 
 - (void) dealloc {
-    [sprite release];
+    [node release];
     [moveStrategy release];
     
     [super dealloc];
@@ -44,7 +49,7 @@
 }
 
 - (CGPoint) position {
-    return sprite.position;
+    return node.position;
 }
 
 - (CGPoint) positionOnLayer:(RotatingLayer*)aLayer {
@@ -60,9 +65,21 @@
 }
 
 - (void) setPosition:(CGPoint)pos {
-    CGPoint p = sprite.position;
+    CGPoint p = node.position;
     prevPosition = p;
-    sprite.position = pos;
+    node.position = pos;
+}
+
+- (NSComparisonResult) compare:(Ball*)aBall {
+    CGFloat l = ccpLength(self.position);
+    CGFloat al = ccpLength(aBall.position);
+    if (l < al) {
+        return NSOrderedAscending;
+    } else if (l > al) {
+        return NSOrderedDescending;
+    } else {
+        return NSOrderedSame;
+    }
 }
 
 - (NSString*) description {
@@ -70,7 +87,7 @@
     if (hexagrid && hexagrid.dirty) {
         dstr = @"/D";
     }
-    CGPoint pos = sprite.position;
+    CGPoint pos = node.position;
     if (hexagrid) {
         return [NSString stringWithFormat:@"<B%d:(≈%d,≈%d)-H%d%@-T%d>", identifier, (int)pos.x, (int)pos.y, hexagrid.identifier, dstr, type];
     } else {

@@ -10,8 +10,13 @@
 
 #import <Foundation/Foundation.h>
 
+@class PowerBar;
+
 @interface ForegroundLayer : Layer {
+    PowerBar* powerBar;
 }
+
+@property (nonatomic, readonly) PowerBar* powerBar;
 
 - (id) init;
 

@@ -19,7 +19,7 @@
                     
 @implementation TripopAppDelegate
 
-@synthesize window;
+@synthesize window, gameModel;
 
 - (void) applicationDidFinishLaunching:(UIApplication*)application
 {
@@ -51,7 +51,7 @@
 	initializeCommon();
     Scene* scene = [Scene node];
     [scene addChild:[BackgroundLayer node]];
-    GameModel* gameModel = [GameModel node];
+    self.gameModel = [GameModel node];
     [scene addChild:gameModel];
     [scene addChild:gameModel.spaceLayer];
     [scene addChild:gameModel.hexameshLayer];

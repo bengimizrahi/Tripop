@@ -29,6 +29,7 @@
     SpaceLayer* spaceLayer;
     HexameshLayer* hexameshLayer;
 
+    NSInteger ballsJustDestroyed;
     CGFloat prevRotation;
 }
 

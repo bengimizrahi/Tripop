@@ -7,6 +7,8 @@
  *
  */
 
+#include "GameModel.h"
+#include "TripopAppDelegate.h"
 #include "common.h"
 
 @implementation RotatingLayer
@@ -14,6 +16,13 @@
 @end
 
 void initializeCommon() {
+	struct timeval t;
+	gettimeofday(&t, nil);
+	unsigned int i;
+	i = t.tv_sec;
+	i += t.tv_usec;
+	srandom(i);
+    
     relPos6[0] = ccp(2 * BR * cosf(M_PI_6), 2 * BR * sinf(M_PI_6));
     relPos6[1] = ccp(0, 2 * BR);
     relPos6[2] = ccp(2 * BR * cosf(5 * M_PI_6), 2 * BR * sinf(5 * M_PI_6));
@@ -53,4 +62,22 @@ void pdis(CGPoint a, CGPoint b, CGPoint c, CGFloat d, CGFloat* vd, CGFloat* hd, 
         *ad = *hd - sqrt(FOUR_BR_SQ - (*vd)*(*vd));
     }
     CCLOG(@"End pdis(a=%@, b=%@, c=%@, dd=%.2f, vd=%.2f, hd=%.2f, ad=%.2f)", CGPointDescription(a),  CGPointDescription(b), CGPointDescription(c), d, *vd, *hd, *ad);
+}
+
+NSMutableArray* shuffle(NSMutableArray* array) {
+    for (int limit = [array count]; limit >= 0; --limit) {
+        int r = CCRANDOM_0_1() * limit;
+        id randomObject = [array objectAtIndex:r];
+        [array removeObjectAtIndex:r];
+        [array addObject:randomObject];
+    }
+    return array;
+}
+
+Action* action_scaleTheBallToZeroThanDestroyIt(Ball* aBall) {
+    TripopAppDelegate* delegate = [UIApplication sharedApplication].delegate;
+    GameModel* gameModel = delegate.gameModel;
+    return [Sequence actions:
+            [Spawn actions:[ScaleTo actionWithDuration:0.3f scale:0.0f], [FadeTo actionWithDuration:0.3f opacity: 100], nil],
+            [CallFuncND actionWithTarget:gameModel selector:@selector(__destroy:ball:) data:aBall], nil];
 }

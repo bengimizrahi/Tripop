@@ -15,7 +15,7 @@
 #define TWO_BR            20.0f
 #define FOUR_BR_SQ        400.0f
 #define LEVEL             8
-#define TOUCH_SENSITIVITY 1.0f
+#define TOUCH_SENSITIVITY 2.0f
 #define M_PI_3            1.047197551196597
 #define M_PI_6            0.52359877559829881565889309058547951
 
@@ -31,3 +31,7 @@ void initializeCommon();
 NSString* CGPointDescription(CGPoint p);
 CGFloat angleBetween(CGPoint p1, CGPoint p2);
 void pdis(CGPoint a, CGPoint b, CGPoint c, CGFloat dd, CGFloat* vd, CGFloat* hd, CGFloat* ad);
+NSMutableArray* shuffle(NSMutableArray* array);
+
+@class Ball;
+Action* action_scaleTheBallToZeroThanDestroyIt(Ball* aBall);

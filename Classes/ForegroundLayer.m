@@ -8,21 +8,34 @@
 
 #import "ForegroundLayer.h"
 
+#import "PowerBar.h"
 #import "common.h"
 #import "cocos2d.h"
 
 @implementation ForegroundLayer
 
+@synthesize powerBar;
+
 - (id) init {
     if ((self = [super init])) {        
         self.position = ccp(0.0f, 0.0f);
         
-        Sprite* foregroundSprite = [Sprite spriteWithFile:@"Tripop.png"];
-        foregroundSprite.position = ccp(0.0f, 0.0f);
-        foregroundSprite.anchorPoint = ccp(0.0f, 0.0f);
-        [self addChild:foregroundSprite];
+        powerBar = [[PowerBar alloc] init];
+        powerBar.anchorPoint = ccp(0.0f, 1.0f);
+        powerBar.position = ccp(0.0f, 480.0f);
+        [self addChild:powerBar];
+        
+        Sprite* tripop = [Sprite spriteWithFile:@"Tripop2.png"];
+        tripop.position = ccp(0.0f, 0.0f);
+        tripop.anchorPoint = ccp(0.0f, 0.0f);
+        [self addChild:tripop];
     }
     return self;
+}
+
+- (void) dealloc {
+    [powerBar release];
+    [super dealloc];
 }
 
 @end

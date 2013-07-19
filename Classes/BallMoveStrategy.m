@@ -16,7 +16,7 @@
 
 - (id) initWithBall:(Ball*)aBall {
     if ((self = [super init])) {
-        NSAssert(aBall.sprite, @"Ball does not have a sprite");
+        NSAssert(aBall.node, @"Ball does not have a CocosNode");
         ball = aBall;
     }
     return self;

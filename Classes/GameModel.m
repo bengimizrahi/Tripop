@@ -21,13 +21,15 @@
 - (void) __prepareLevels;
 - (Ball*) __checkCollisionForBall:(Ball*)aBall collidePosition:(CGPoint*)aCollidePosition;
 - (BOOL) __connectAttachedBall:(Ball*)aAttachedBall withFreeBall:(Ball*)aFreeBall;
-- (NSArray*) __convertToNSArray:(BallType*)arr count:(int)n;
+- (void) __collapseUnconnectedBalls;
++ (NSArray*) __convertToNSArray:(BallType*)arr count:(int)n;
+- (void) __destroy:(Sprite*)aSprite ball:(Ball*)aBall;
 @end
 
 @implementation GameModel
 
 @synthesize freeBalls, attachedBalls, hexamesh, levels;
-@synthesize /*infoLayer, */hexameshLayer, spaceLayer;
+@synthesize spaceLayer, hexameshLayer; //, infoLayer
 
 - (id) init {
     if ((self = [super init])) {
@@ -41,7 +43,7 @@
         
         spaceLayer = [[SpaceLayer node] retain];
         hexameshLayer = [[HexameshLayer node] retain];
-        [hexameshLayer addChild:hexamesh.center.ball.sprite];
+        [hexameshLayer addChild:hexamesh.center.ball.node];
 //      infoLayer = [[InfoLayer node] retain];
     }
     return self;
@@ -57,14 +59,36 @@
     [super dealloc];
 }
 
+NSMutableArray* convertToNSArray(BallType* arr, NSInteger n) {
+    NSMutableArray* r = [[NSMutableArray alloc] init];
+    for (int i = 0; i < n; ++i) {
+        NSNumber* num = [NSNumber numberWithInt:arr[i]];
+        [r addObject:num];
+    }
+    return [r autorelease];    
+}
+
 - (void) __prepareLevels {
     BallType ballTypes[4] = {BallType_Red, BallType_Green, BallType_Blue, BallType_Yellow};
+    NSMutableArray* arr = shuffle(convertToNSArray(ballTypes, 4));
+    
+    Level* level1 = [[[Level alloc] initWithBallTypes:[arr subarrayWithRange:NSMakeRange(0, 2)] repeat:30 ballSpeed:70 createBallInterval:1.0f] autorelease];
+    Level* level2 = [[[Level alloc] initWithBallTypes:[arr subarrayWithRange:NSMakeRange(0, 3)] repeat:30 ballSpeed:70 createBallInterval:1.0f] autorelease];
+    Level* level3 = [[[Level alloc] initWithBallTypes:arr repeat:60 ballSpeed:70 createBallInterval:1.0f] autorelease];
+    Level* level4 = [[[LevelWithDistinctBalls alloc] initWithBallTypes:arr repeat:60 ballSpeed:70 createBallInterval:1.0f] autorelease];
+    NSArray* warmups = [[[NSArray alloc] initWithObjects:level1, level2, level3, level4, nil] autorelease];
+    
+    Level* level5 = [[[LevelWithSimultaneousBalls alloc] initWithBallTypes:arr repeat:30 ballSpeed:70 createBallInterval:2.0f simul:2] autorelease];
+    Level* level6 = [[[LevelWithSimultaneousBalls alloc] initWithBallTypes:arr repeat:20 ballSpeed:70 createBallInterval:3.0f simul:3] autorelease];
+    Level* level7 = [[[LevelWithSimultaneousBalls alloc] initWithBallTypes:arr repeat:30 ballSpeed:70 createBallInterval:2.0f simul:3] autorelease];
+    Level* level8 = [[[LevelWithSimultaneousBalls alloc] initWithBallTypes:arr repeat:17 ballSpeed:70 createBallInterval:4.0f simul:4] autorelease];
+    Level* level9 = [[[LevelWithSimultaneousBalls alloc] initWithBallTypes:arr repeat:20 ballSpeed:70 createBallInterval:3.0f simul:4] autorelease];
+    Level* level10 = [[[LevelWithSimultaneousBalls alloc] initWithBallTypes:arr repeat:30 ballSpeed:70 createBallInterval:2.0f simul:4] autorelease];
+    NSArray* simults = [[[NSArray alloc] initWithObjects:level5, level6, level7, level8, level9, level10, nil] autorelease];
     
     levels = [[NSMutableArray alloc] init];
-    
-    NSArray* ballTypeList = [self __convertToNSArray:ballTypes count:4];
-    Level* level1 = [[Level alloc] initWithBallTypes:ballTypeList repeat:130 ballSpeed:70 createBallInterval:1.0f];
-    [levels addObject:level1];
+    [levels addObjectsFromArray:warmups];
+    [levels addObjectsFromArray:simults];
     
     currentLevel = [levels objectAtIndex:0];
     currentLevel.gameModel = self;
@@ -86,6 +110,12 @@
         CCLOG(@"dt = %.2f", dt);
     }
     [hexameshLayer updateRotation];
+    for (int i = 1; i < [attachedBalls count]; ++i) {
+        Ball* b = [attachedBalls objectAtIndex:i];
+        if (b.type != BallType_Core) {
+            b.node.rotation = -1 * hexameshLayer.rotation;
+        }
+    }
     
     NSMutableArray* toBeRemovedFromFreeBalls = [[NSMutableArray alloc] init];
     for (Ball* freeBall in freeBalls) {
@@ -93,19 +123,27 @@
         CGPoint collidePosition;
         Ball* attachedBall = nil;
         if ((attachedBall = [self __checkCollisionForBall:freeBall collidePosition:&collidePosition])) {
-            if (freeBall.ballAction) {
+            if (/*freeBall.ballAction*/0) {
                 // apply ball action
             } else {
                 if (attachedBall.hexagrid.distance == LEVEL) {
                     [self endGame];
                 }
                 [toBeRemovedFromFreeBalls addObject:freeBall];
-                [spaceLayer removeChild:freeBall.sprite cleanup:YES];
+                [spaceLayer removeChild:freeBall.node cleanup:YES];
                 freeBall.position = collidePosition;
                 if ([self __connectAttachedBall:attachedBall withFreeBall:freeBall]) {
                     [attachedBalls addObject:freeBall];
-                    [hexameshLayer addChild:freeBall.sprite];
+                    [hexameshLayer addChild:freeBall.node];
                     NSArray* group = [freeBall.hexagrid sameColorGroup];
+                    if ([group count] >=3) {
+                        for (Hexagrid* h in group) {
+                            [h.ball.node runAction:action_scaleTheBallToZeroThanDestroyIt(h.ball)];
+                            h.ball.isBeingDestroyed = YES;
+                        }
+                    }
+                } else {
+                    NSLog(@"cannot connect");
                 }
             }
         }
@@ -114,7 +152,10 @@
         [freeBalls removeObject:ball];
     }
     [toBeRemovedFromFreeBalls release];
-    
+    if (ballsJustDestroyed > 0) {
+        [self __collapseUnconnectedBalls];
+        ballsJustDestroyed = 0;
+    }
     [currentLevel execute:dt];
     if (currentLevel.expired) {
         [levels removeObjectAtIndex:0];
@@ -199,13 +240,105 @@
     return YES;
 }
 
-- (NSArray*) __convertToNSArray:(BallType*)arr count:(int)n {
-    NSMutableArray* r = [[NSMutableArray alloc] init];
-    for (int i = 0; i < n; ++i) {
-        NSNumber* num = [NSNumber numberWithInt:arr[i]];
-        [r addObject:num];
+- (void) __collapseUnconnectedBalls {
+    NSMutableArray* arr = [[NSMutableArray alloc] initWithObjects:hexamesh.center, nil];
+    NSMutableArray* connectedGrids = [[NSMutableArray alloc] initWithObjects:hexamesh.center, nil];
+    hexamesh.center.dirty = YES;
+    while ([arr count] > 0) {
+        Hexagrid* h = [arr lastObject];
+        [arr removeLastObject];
+        for (Hexagrid* n in h.neighbours) {
+            if (![n isEqual:[NSNull null]] && n.ball && !n.dirty) {
+                [arr addObject:n];
+                [connectedGrids addObject:n];
+                n.dirty = YES;
+            }
+        }
     }
-    return [r autorelease];
+    NSMutableArray* temporaryArray = [[NSMutableArray alloc] init];
+    for (Hexagrid* h in connectedGrids) {
+        [temporaryArray addObject:h.ball];
+        h.dirty = NO;
+    }
+    NSMutableSet* connectedBalls = [[NSMutableSet alloc] initWithArray:temporaryArray];
+    [temporaryArray release];
+    [connectedGrids release];    
+    [arr release];
+
+    NSMutableSet* temporarySet = [[NSMutableSet alloc] initWithArray:attachedBalls];
+    [temporarySet minusSet:connectedBalls];
+    NSMutableArray* disconnectedBalls = [[NSMutableArray alloc] initWithArray:[temporarySet allObjects]];
+    [temporarySet release];
+    
+    if ([disconnectedBalls count] == 0) {
+        goto end;
+    }
+    
+    NSMutableArray* collapsingBalls = [[NSMutableArray alloc] initWithArray:disconnectedBalls];
+    NSMutableSet* ballsToCheckForPopping = [[NSMutableSet alloc] initWithArray:disconnectedBalls];
+    [collapsingBalls sortUsingSelector:@selector(compare:)];
+    
+    while ([collapsingBalls count] > 0) {
+        Ball* b = [collapsingBalls objectAtIndex:0];
+        [collapsingBalls removeObject:b];
+        BOOL touchesToAtLeastOneConnectedBall = NO;
+        for (Hexagrid* n in b.hexagrid.neighbours) {
+            if (![n isEqual:[NSNull null]] && n.ball && [connectedBalls member:n.ball]) {
+                touchesToAtLeastOneConnectedBall = YES;
+            }
+        }
+        if (touchesToAtLeastOneConnectedBall) {
+            [connectedBalls addObject:b];
+        } else {
+            Hexagrid* closestGrid = nil;
+            for (Hexagrid* n in b.hexagrid.neighbours) {
+                if (![n isEqual:[NSNull null]]) {
+                    if (!closestGrid) {
+                        closestGrid = n;
+                    } else {
+                        if (n.distance < closestGrid.distance || ccpLength(n.position) < ccpLength(closestGrid.position)) {
+                            closestGrid = n;
+                        }
+                    }
+                }
+            }
+            if (!closestGrid.ball) {
+                Hexagrid* oldH = b.hexagrid;
+                oldH.ball = nil;
+                closestGrid.ball = b;                
+            }
+            [collapsingBalls addObject:b];
+        }
+    }
+    [collapsingBalls release];
+    while ([ballsToCheckForPopping count] > 0) {
+        Ball* b = [ballsToCheckForPopping anyObject];
+        [ballsToCheckForPopping removeObject:b];
+        if (!b.isBeingDestroyed) {
+            NSArray* group = [b.hexagrid sameColorGroup];
+            if ([group count] >= 3) {
+                for (Hexagrid* h in group) {
+                    [h.ball.node runAction:action_scaleTheBallToZeroThanDestroyIt(h.ball)];
+                    h.ball.isBeingDestroyed = YES;
+                }
+            } else {
+                NSSet* set = [[NSSet alloc] initWithArray:group];
+                [ballsToCheckForPopping minusSet:set];
+                [set release];
+            }
+        }
+    }
+    [ballsToCheckForPopping release];
+end:
+    [disconnectedBalls release];
+    [connectedBalls release];
+}
+
+- (void) __destroy:(Sprite*)aSprite ball:(Ball*)aBall {
+    [attachedBalls removeObject:aBall];
+    [hexameshLayer removeChild:aSprite cleanup:YES];
+    aBall.hexagrid.ball = nil;
+    ballsJustDestroyed += 1;
 }
 
 @end

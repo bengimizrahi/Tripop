@@ -70,7 +70,7 @@
 }
 
 - (void) __touchMovedWithDelta:(CGFloat)dx {
-    lastStoredRotation = lastStoredRotation + 180.0f/GAME_AREA_RADIUS*dx; // *TOUCH_SENSITIVITY
+    lastStoredRotation = lastStoredRotation + 180.0f/GAME_AREA_RADIUS*dx*TOUCH_SENSITIVITY;
 }
 
 - (GameModel*) gameModel {
@@ -78,7 +78,7 @@
 }
 
 - (void) setGameModel:(GameModel*)aGameModel {
-    [self addChild:aGameModel.hexamesh.center.ball.sprite];
+    [self addChild:aGameModel.hexamesh.center.ball.node];
 }
 
 @end

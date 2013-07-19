@@ -14,16 +14,17 @@ typedef enum {
     BallType_Green,
     BallType_Blue,
     BallType_Yellow,
+    BallType_FireBall,
 } BallType;
 
 @class BallMoveStrategy;
 @class Hexagrid;
-@class Sprite;
+@class CocosNode;
 @class RotatingLayer;
 
 @interface Ball : NSObject {
     int identifier;
-    Sprite* sprite;
+    CocosNode* node;
     
     BallType type;
     BallMoveStrategy* moveStrategy;
@@ -37,7 +38,7 @@ typedef enum {
 }
 
 @property (nonatomic, readonly) int identifier;
-@property (nonatomic, readonly) Sprite* sprite;
+@property (nonatomic, readonly) CocosNode* node;
 
 @property (nonatomic, readonly) BallType type;
 @property (nonatomic, retain) BallMoveStrategy* moveStrategy;
@@ -56,6 +57,7 @@ typedef enum {
 - (CGPoint) positionOnLayer:(RotatingLayer*)aLayer;
 - (CGPoint) prevPositionOnLayer:(RotatingLayer*)aLayer;
 
+- (NSComparisonResult) compare:(Ball*)aBall;
 - (NSString*) description;
 
 @end

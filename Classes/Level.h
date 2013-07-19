@@ -6,6 +6,7 @@
 //  Copyright 2009 __MyCompanyName__. All rights reserved.
 //
 
+#import "Ball.h"
 #import <Foundation/Foundation.h>
 
 @class GameModel;
@@ -28,7 +29,36 @@
                   repeat:(int)aRepeat
                ballSpeed:(CGFloat)aBallSpeed
       createBallInterval:(CGFloat)aCreateBallInterval;
+- (void) execute:(CGFloat)dt;
+- (NSString*) description;
 
+@end
+
+@interface LevelWithDistinctBalls : Level {
+    BallType lastBallType;
+    NSMutableArray* mutableBallTypes;
+}
+
+- (id) initWithBallTypes:(NSArray*)aBallTypes
+                  repeat:(int)aRepeat
+               ballSpeed:(CGFloat)aBallSpeed
+      createBallInterval:(CGFloat)aCreateBallInterval;
+- (void) execute:(CGFloat)dt;
+- (NSString*) description;
+
+@end
+
+@interface LevelWithSimultaneousBalls : Level {
+    int simul;
+    CGFloat angleStep;
+    NSMutableArray* mutableBallTypes;
+}
+
+- (id) initWithBallTypes:(NSArray*)aBallTypes
+                  repeat:(int)aRepeat
+               ballSpeed:(CGFloat)aBallSpeed
+      createBallInterval:(CGFloat)aCreateBallInterval
+                   simul:(int)aSimul;
 - (void) execute:(CGFloat)dt;
 - (NSString*) description;
 
