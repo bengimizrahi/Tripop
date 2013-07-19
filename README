@@ -1,0 +1,5 @@
+This is a simple demo of balls touch the core and then pop.
+
+There are lots of connecting algorithm added but does not compile at this moment.
+
+We need a Hexagrid class to represent cells for the connected balls.
