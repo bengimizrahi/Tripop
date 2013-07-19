@@ -61,6 +61,36 @@ class SinusMoveStrategy(MoveStrategy):
         self.angle += self.angularSpeed*dt
         y = math.sin(self.angle)*GAME_AREA_RADIUS
         self.ball.position = x, y
+
+class BallAction(object):
+
+    def __init__(self, gameLayer):
+        self.gameLayer = gameLayer
+        pass
+
+class BallAction_Laser(BallAction):
+    
+    def __init__(self, gameLayer):
+        super(BallAction_Laser, self).__init__(gameLayer)
+    
+    def __call__(self, ball):
+        ballsToPop = []
+        while ball.type != BALL_TYPE_CORE:
+            if ball.goingToPop == False:
+                ballsToPop.append(ball)
+            ball = closestGrid(ball.hexagrid.neighbours).ball
+        gameLayer.addToPoppingBalls(ballsToPop)
+
+class BallAction_ClearRing(BallAction):
+
+    def __init__(self, gameLayer):
+        super(BallAction_Explode, self).__init__(gameLayer)
+        self.depth = depth
+        
+    def __call__(self, ball):
+        ring = self.gameLayer.hexameshLayer.hexamesh.rings[ball.hexagrid.distance]
+        ballsToPop = [h.ball for h in ring if h.ball != None and h.ball.goingToPop == False]
+        self.gameLayer.addToPoppingBalls(ballsToPop)
         
 class Ball(object):
 

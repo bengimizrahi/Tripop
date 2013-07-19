@@ -1,8 +1,6 @@
 What's next?
 
 - Power Bar
-- Prepare levels
-    - BallAction
 - Game Menu
 	- New Game
 	- Resume Game

@@ -4,6 +4,7 @@ from Hexagrid import *
 from Logic import *
 
 import cocos
+from cocos import draw
 from cocos.director import director
 from cocos.layer import *
 from cocos.scene import Scene
@@ -23,7 +24,7 @@ class HexameshLayer(Layer):
 
     def __init__(self):
         super(HexameshLayer, self).__init__()
-        self.position = 0, 80
+        self.position = CENTER_POSITION
         self.children_anchor = 160, 240
 
         self.hexamesh = Hexamesh(LEVEL, self)
@@ -42,31 +43,11 @@ class HexameshLayer(Layer):
         self.attachedBalls.remove(ball)
         
     def on_mouse_motion(self, x, y, dx, dy):
-        self.lastReportedRotation = self.rotation + 180.0/GAME_AREA_RADIUS*dx*MOUSE_SENSITIVITY
-        
-class Combo:
-    def __init__(self, level, grids):
-        self.level = level
-        self.grids = grids
-        self.points = 5*len(grids)
+        self.lastReportedRotation = self.lastReportedRotation + 180.0/GAME_AREA_RADIUS*dx*MOUSE_SENSITIVITY
 
-    def __repr__(self):
-        return "Combo: %d, %s" % (self.level, self.grids)
-        
-    def isActive(self):
-        return not all(map(lambda h: (h.ball == None) or (h.ball != None and h.ball.goingToPop == False), self.grids))
-        
-    def incrementLevel(self, grids):
-        self.level += 1
-        self.grids = grids
-        self.points += 5*len(grids)
-    
-    def isRelated(self, grids):
-        for h in grids:
-            if h in self.grids:
-                return True
-        return False
-        
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        pass #self.lastReportedRotation = self.rotation + 180.0/GAME_AREA_RADIUS*dx*MOUSE_SENSITIVITY
+
 class GameLayer(Layer):
 
     is_event_handler = True
@@ -74,10 +55,9 @@ class GameLayer(Layer):
     def __init__(self, filename):
         super(GameLayer, self).__init__()
         self.image = pyglet.resource.image('Images/GameLayerImage.png')
-        self.position = 0, 80
+        self.position = CENTER_POSITION
         self.children_anchor = 160, 240
 
-        self.combos = []
         self.freeBalls = []
         self.schedule(self.step)
         self.hexameshLayer = HexameshLayer()
@@ -95,23 +75,58 @@ class GameLayer(Layer):
         warmups = [
             Logic_CreateBall_Simple(self, types=arr[:2], repeat=30, ballSpeed=70, createBallInterval=1.0), # 30 secs
             Logic_CreateBall_Simple(self, types=arr[:3], repeat=30, ballSpeed=70, createBallInterval=1.0), # 30 secs
-            Logic_CreateBall_Simple(self, types=arr, repeat=300, ballSpeed=70, createBallInterval=1.0),    # 5 mins
+            Logic_CreateBall_Simple(self, types=arr, repeat=60, ballSpeed=70, createBallInterval=1.0),    # 1 mins
+            Logic_CreateBall_Distinct(self, types=arr, repeat=60, ballSpeed=70, createBallInterval=1.0),    # 1 mins
+
         ]
         simults = [
             Logic_CreateBall_Simultaneous(self, types=arr, repeat=30, ballSpeed=70, createBallInterval=2.0, simul=2), # 1 min
-            Logic_CreateBall_Simultaneous(self, types=arr, repeat=60, ballSpeed=70, createBallInterval=1.0, simul=2), # 1 min
             Logic_CreateBall_Simultaneous(self, types=arr, repeat=20, ballSpeed=70, createBallInterval=3.0, simul=3), # 1 min
             Logic_CreateBall_Simultaneous(self, types=arr, repeat=30, ballSpeed=70, createBallInterval=2.0, simul=3), # 1 min
-            Logic_CreateBall_Simultaneous(self, types=arr, repeat=60, ballSpeed=70, createBallInterval=1.0, simul=3), # 1 min
             Logic_CreateBall_Simultaneous(self, types=arr, repeat=15, ballSpeed=70, createBallInterval=4.0, simul=4), # 1 min
             Logic_CreateBall_Simultaneous(self, types=arr, repeat=20, ballSpeed=70, createBallInterval=3.0, simul=4), # 1 min
             Logic_CreateBall_Simultaneous(self, types=arr, repeat=30, ballSpeed=70, createBallInterval=2.0, simul=4), # 1 min
-            Logic_CreateBall_Simultaneous(self, types=arr, repeat=60, ballSpeed=70, createBallInterval=1.0, simul=4), # 1 min
+        ]
+        sinusesAdded = [
+            Logic_CreateBall_Distinct(self, types=arr, repeat=30, ballSpeed=70, createBallInterval=1.0),    # 30 secs
+            Logic_Parallel_Execution(self, [ # 3 min
+                Logic_CreateBall_Distinct(self, types=arr, repeat=180, ballSpeed=70, createBallInterval=1.0),
+                Logic_CreateBall_Simple_Sinus(self, types=arr, repeat=45, ballSpeed=20, createBallInterval=4.0, angularSpeed=math.pi/2),
+            ]),
+            Logic_Parallel_Execution(self, [ # 3 min
+                Logic_CreateBall_Simultaneous(self, types=arr, repeat=90, ballSpeed=70, createBallInterval=2.0, simul=2),
+                Logic_CreateBall_Simple_Sinus(self, types=arr, repeat=45, ballSpeed=20, createBallInterval=4.0, angularSpeed=math.pi/2),
+            ]),
+            Logic_Parallel_Execution(self, [ # 3 min
+                Logic_CreateBall_Simultaneous(self, types=arr, repeat=180, ballSpeed=70, createBallInterval=1.0, simul=2),
+                Logic_CreateBall_Simple_Sinus(self, types=arr, repeat=45, ballSpeed=20, createBallInterval=4.0, angularSpeed=math.pi/2),
+            ]),
+            Logic_Parallel_Execution(self, [ # 3 min
+                Logic_CreateBall_Simultaneous(self, types=arr, repeat=90, ballSpeed=70, createBallInterval=2.0, simul=3),
+                Logic_CreateBall_Simple_Sinus(self, types=arr, repeat=45, ballSpeed=20, createBallInterval=4.0, angularSpeed=math.pi/2),
+            ]),
+            Logic_Parallel_Execution(self, [ # 3 min
+                Logic_CreateBall_Simultaneous(self, types=arr, repeat=180, ballSpeed=70, createBallInterval=2.0, simul=4),
+                Logic_CreateBall_Simple_Sinus(self, types=arr, repeat=45, ballSpeed=20, createBallInterval=4.0, angularSpeed=math.pi/3),
+                Logic_CreateBall_Simple_Sinus(self, types=arr, repeat=30, ballSpeed=20, createBallInterval=6.0, angularSpeed=math.pi/2),
+            ]),
+        ]
+        test = [
+            Logic_Parallel_Execution(self, [
+                Logic_CreateBall_Simultaneous(self, types=arr, repeat=180, ballSpeed=70, createBallInterval=2.0, simul=2),
+                Logic_CreateBall_Simultaneous(self, types=arr, repeat=180, ballSpeed=70, createBallInterval=2.0, simul=3),
+                Logic_CreateBall_Simultaneous(self, types=arr, repeat=180, ballSpeed=70, createBallInterval=2.0, simul=4),
+                Logic_CreateBall_Simultaneous(self, types=arr, repeat=180, ballSpeed=70, createBallInterval=2.0, simul=4),
+                Logic_CreateBall_Simultaneous(self, types=arr, repeat=180, ballSpeed=70, createBallInterval=2.0, simul=4),
+            ])
         ]
                 
+        
         self.logics_createBall = []
-        #self.logics_createBall.extend(warmups)
+        #self.logics_createBall.extend(test)
+        self.logics_createBall.extend(warmups)
         self.logics_createBall.extend(simults)
+        self.logics_createBall.extend(sinusesAdded)
 
         self.createBallLogic = self.logics_createBall.pop(0)
 
@@ -184,13 +199,20 @@ class GameLayer(Layer):
         elif y <= 0 and 5*math.pi/3 <= angle <= 2*math.pi: nb_idx = 5
         else: assert False, "connect error x=%.2f y=%.2f angle=%.2f" % (x, y, angle)
         nb_hexagrid = attachedBall.hexagrid.neighbours[nb_idx]
-        assert nb_hexagrid.ball == None, "Can't connect, there is a ball %s in %s" % (nb_hexagrid.ball, nb_hexagrid)
+        #assert nb_hexagrid.ball == None, "Can't connect, there is a ball %s in %s" % (nb_hexagrid.ball, nb_hexagrid)
+        if nb_hexagrid.ball != None:
+            freeBall.moveByDeltaTime(-1)
+            return False
         nb_hexagrid.setBall(freeBall)
         freeBall.moveStrategy = None
+        return True
     
     def addToPoppingBalls(self, balls):
         points = 5*len(balls)
         self.infoLayer.addToScore(points)
+        self.infoLayer.power += max(0, len(balls)-2)
+        self.infoLayer.power = min(self.infoLayer.power, 16)
+        self.infoLayer.powerLabel.element.text = "Power:%d" % self.infoLayer.power
         self.infoLayer.animatePoints(str(points), self.avg(balls), 0.25, 0.5)
         for b in balls: b.goingToPop = True
         self.hexameshLayer.poppingBalls.extend(balls)
@@ -207,8 +229,6 @@ class GameLayer(Layer):
                 self.hexameshLayer.poppingBalls.remove(b)
                 self.hexameshLayer.removeBall(b)
                 b.hexagrid.setBall(None)
-            if len(self.hexameshLayer.attachedBalls) == 1:
-                self.infoLayer.animatePoints("Perfect!", (0, 80), 0, 1.0)
             self.collapseUnconnectedBalls()
 
     def collapseUnconnectedBalls(self):
@@ -228,28 +248,7 @@ class GameLayer(Layer):
 
         if len(unconnectedBalls) == 0:
             return
-        
-        def closestGrid(grids):
-            c = None
-            for i in xrange(len(grids)):
-                if grids[i] != None:
-                    c = grids[i]
-                    start = i+1
-                    break
-            assert c != None
-            for h in grids[start:]:
-                if h != None:
-                    if h.distance < c.distance: c = h
-                    elif distcmp(h, c) == -1: c = h
-            return c
-
-        def distcmp(a, b):
-            x, y = a.position
-            d1sqr = x**2 + y**2
-            x, y = b.position
-            d2sqr = x**2 + y**2
-            return cmp(d1sqr, d2sqr)
-        
+                
         def slideBall(ball, h):
             assert h.ball == None, "Cannot slide ball, h.ball != None."
             oh = ball.hexagrid
@@ -257,7 +256,6 @@ class GameLayer(Layer):
             h.setBall(ball)
         
         slidingBalls = unconnectedBalls[:]
-        newComboBalls = unconnectedBalls[:]
         ballsToCheckForPopping = set(unconnectedBalls[:])
         slidingBalls.sort(distcmp)
         
@@ -276,12 +274,6 @@ class GameLayer(Layer):
             if b.goingToPop == False:
                 group = b.hexagrid.sameColorGroup()
                 if len(group) >= 3:
-                    for combo in self.combos:
-                        if combo.isRelated(group):
-                            if COMBO_DEBUG: print "%s is related with %s" % (combo, group)
-                            combo.incrementLevel(group)
-                            if COMBO_DEBUG: print "combo updated: %s" % combo
-                            break
                     self.addToPoppingBalls([h.ball for h in group])
                 else:
                     ballsToCheckForPopping -= set([h.ball for h in group])
@@ -321,7 +313,7 @@ class GameLayer(Layer):
                 if DEBUG: print "ab.__actualDist(%s) != None" % ab.__actualDist
                 if candidateBall == None or ab.__actualDist < candidateBall.__actualDist:
                     if candidateBall != None:
-                        if DEBUG: print "candidateBall(%s) == None or ab.__actualDist(%.2f) < candidateBall.__actualDist(%.2f) is True." % (candidateBall, ab.__actualDist, candidateBall.__actualDist)
+                        if DEBUG: print "ab.__actualDist(%.2f) < candidateBall.__actualDist(%.2f) is True." % (candidateBall, ab.__actualDist, candidateBall.__actualDist)
                     else:
                         if DEBUG: print "candidateBall(None) == None is True."
                     if dd > ab.__actualDist:
@@ -348,22 +340,11 @@ class GameLayer(Layer):
             return candidateBall, (final_x, final_y)
         else:
             return None, None
-
-    def checkCombos(self):
-        toBeRemoved = []
-        for combo in self.combos:
-            if combo.isActive() == False:
-                toBeRemoved.append(combo)
-        for combo in toBeRemoved:
-            self.combos.remove(combo)
-            if COMBO_DEBUG: print "%s is removed" % combo
-            if combo.level > 1:
-                self.infoLayer.animatePoints("x%d Combo" % combo.level, (0, -100), 0, 1.0)
-                self.infoLayer.addToScore(combo.points * combo.level)
         
     def step(self, dt):
         if dt == 0:
             if DEBUG: print "dt == 0, do nothing"
+            return
         self.hexameshLayer.prevRotation = self.hexameshLayer.rotation
         self.hexameshLayer.rotation = self.hexameshLayer.lastReportedRotation
         
@@ -376,17 +357,13 @@ class GameLayer(Layer):
                     exit()
                 self.removeBall(freeBall)
                 freeBall.position = collidePosition
-                self.connect(attachedBall, freeBall)
-                self.hexameshLayer.addBall(freeBall)
-                group = freeBall.hexagrid.sameColorGroup()
-                if len(group) >= 3:
-                    combo = Combo(1, group)
-                    if COMBO_DEBUG: print "new combo: ", combo
-                    self.combos.append(combo)
-                    self.addToPoppingBalls([h.ball for h in group])
+                if self.connect(attachedBall, freeBall):
+                    self.hexameshLayer.addBall(freeBall)
+                    group = freeBall.hexagrid.sameColorGroup()
+                    if len(group) >= 3:
+                        self.addToPoppingBalls([h.ball for h in group])
             for ab in self.hexameshLayer.attachedBalls: ab.__verticalDist, ab.__horizontalDist = None, None
         self.updatePoppingBalls(dt)
-        self.checkCombos()
         self.createBallLogic(dt)
         if self.createBallLogic.isExpired():
             self.createBallLogic = self.logics_createBall.pop(0)
@@ -405,9 +382,12 @@ class GameLayer(Layer):
         global DEBUG
         print key
         if key == 32:
-            balls = [h.ball for h in self.hexameshLayer.hexamesh.rings[0] if h.ball != None and h.ball.goingToPop == False]
-            if len(balls) > 0:
-                self.addToPoppingBalls(balls)
+            if self.infoLayer.power > 8:
+                balls = [h.ball for h in self.hexameshLayer.hexamesh.rings[0] if h.ball != None and h.ball.goingToPop == False]
+                self.infoLayer.power = 0
+                self.infoLayer.powerLabel.element.text = "Power: 0"
+                if len(balls) > 0:
+                    self.addToPoppingBalls(balls)
         elif key == 100:
             DEBUG = not DEBUG 
 
@@ -415,15 +395,18 @@ class InfoLayer(Layer):
 
     def __init__(self):
         super(InfoLayer, self).__init__()
-        self.position = 0, 80
+        self.position = CENTER_POSITION
         self.children_anchor = 160, 240
 
         self.score = 0
         self.hiscore = 0
+        self.power = 0
         self.scoreLabel = cocos.text.Label("%06d" % self.score, x=-155, y=145)
         self.hiscoreLabel = cocos.text.Label("HI:%06d" % self.hiscore, x=80, y=145)
+        self.powerLabel = cocos.text.Label("Power:%d" % self.power, x=-155, y=-165)
         self.add(self.scoreLabel)
         self.add(self.hiscoreLabel)
+        self.add(self.powerLabel)
 
     def animatePoints(self, points, position, delay, duration):
         @CallFuncS
