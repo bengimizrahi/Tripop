@@ -42,6 +42,8 @@ class Ball:
     def move(self, dt):
 	x, y = self.position()
 	self.setPosition(x+(self.velocity.x*dt), y+(self.velocity.y*dt))
+    def conenct(self):
+	assert True, "NOT IMPLEMENTED"
     def connect(self, ball):
 	angle = self.angleTo(ball)
 	x1, y1 = self.position()
@@ -82,3 +84,4 @@ class Ball:
 	nb_hexagrid.ball = ball
 	ball.hexagrid = nb_hexagrid
 	ball.velocity *= 0
+	#ball.connect()

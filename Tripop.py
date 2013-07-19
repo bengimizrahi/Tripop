@@ -33,6 +33,7 @@ class CreateBallLogic:
 	    self.gameLayer.addBall(newBall)
 
 class GameLayer(Layer):
+    is_event_handler = True
     def __init__(self):
 #view
 	super(GameLayer, self).__init__()
@@ -45,6 +46,7 @@ class GameLayer(Layer):
 	self.attachedBalls = [self.centerGrid.ball]
 	self.freeBalls = []
 	self.createBallLogic = CreateBallLogic(self)
+	self.mousePressed = False
 	self.schedule(self.step)
     def step(self, dt):
 #start
@@ -65,6 +67,8 @@ class GameLayer(Layer):
     def addBall(self, ball):
 	self.add(ball.sprite)
 	self.freeBalls.append(ball)
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+	self.rotation = self.rotation + 180/GAME_AREA_RADIUS*dx
 
 if __name__ == "__main__":
     director.init(width=GAME_AREA_RADIUS*2, height=GAME_AREA_RADIUS*2, resizable=True)
