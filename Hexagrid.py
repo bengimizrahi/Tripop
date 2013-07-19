@@ -134,7 +134,18 @@ class Hexamesh:
             h = h.neighbours[0]
         self.center = h
         setPositions()
-        self.center.setBall(Ball(0, 0, 0, BALL_TYPE_CORE))
+        self.center.setBall(Ball(BALL_TYPE_CORE))
+        self.rings = []
+        for l in xrange(1, LEVEL):
+            cursor = self.center
+            for i in xrange(l): cursor = cursor.neighbours[0]
+            ring = []
+            for nb_idx in [4, 3, 2, 1, 0, 5]:
+                for i in xrange(l):
+                    cursor = cursor.neighbours[nb_idx]
+                    ring.append(cursor)
+            self.rings.append(ring)
+                
 
 def test_buildHexagrid(level):
     hexamesh = Hexamesh(level)

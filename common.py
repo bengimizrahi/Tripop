@@ -1,8 +1,8 @@
 from os import listdir
 import math
 
-#DEBUG = True
-DEBUG = False
+DEBUG = not True
+COMBO_DEBUG = not True
 GAME_AREA_RADIUS = 160
 BALL_RADIUS = 10
 FOUR_RADIUS_SQR = 4 * (BALL_RADIUS**2)

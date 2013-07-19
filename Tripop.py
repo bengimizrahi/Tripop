@@ -1,6 +1,7 @@
 from common import *
 from Ball import *
 from Hexagrid import *
+from Logic import *
 
 import cocos
 from cocos.director import director
@@ -14,27 +15,7 @@ from cocos.euclid import *
 import pyglet
 from pyglet.window import key
 
-import pdb
 import math
-import random
-
-class CreateBallLogic:
-
-    def __init__(self, gameLayer):
-        self.gameLayer = gameLayer
-        self.createBallInterval = 4.0
-        self.createBallTimer = self.createBallInterval
-        self.ballSpeed = 70#/0.001 #px/sec
-
-    def __call__(self, dt):
-        self.createBallTimer += dt
-        if (self.createBallTimer > self.createBallInterval):
-            self.createBallInterval = max(1, self.createBallInterval-0.1)
-            self.createBallTimer = 0.0
-            angle = 2*math.pi*random.random()
-            type = random.choice([BALL_TYPE_RED, BALL_TYPE_GREEN, BALL_TYPE_YELLOW, BALL_TYPE_BLUE])
-            newBall = createBall(angle, self.ballSpeed, type)
-            self.gameLayer.addBall(newBall)
 
 class HexameshLayer(Layer):
 
@@ -59,16 +40,36 @@ class HexameshLayer(Layer):
     def removeBall(self, ball):
         self.remove(ball.sprite)
         self.attachedBalls.remove(ball)
-
-    def on_key_press(self, key, modifiers):
-        global DEBUG
-        if key == 100:
-            DEBUG = not DEBUG 
         
     def on_mouse_motion(self, x, y, dx, dy):
         self.lastReportedRotation = self.rotation + 180.0/GAME_AREA_RADIUS*dx*MOUSE_SENSITIVITY
         
+class Combo:
+    def __init__(self, level, grids):
+        self.level = level
+        self.grids = grids
+        self.points = 5*len(grids)
+
+    def __repr__(self):
+        return "Combo: %d, %s" % (self.level, self.grids)
+        
+    def isActive(self):
+        return not all(map(lambda h: (h.ball == None) or (h.ball != None and h.ball.goingToPop == False), self.grids))
+        
+    def incrementLevel(self, grids):
+        self.level += 1
+        self.grids = grids
+        self.points += 5*len(grids)
+    
+    def isRelated(self, grids):
+        for h in grids:
+            if h in self.grids:
+                return True
+        return False
+        
 class GameLayer(Layer):
+
+    is_event_handler = True
 
     def __init__(self, filename):
         super(GameLayer, self).__init__()
@@ -76,16 +77,56 @@ class GameLayer(Layer):
         self.position = 0, 80
         self.children_anchor = 160, 240
 
+        self.combos = []
         self.freeBalls = []
-        self.createBallLogic = CreateBallLogic(self)
         self.schedule(self.step)
         self.hexameshLayer = HexameshLayer()
         self.infoLayer = InfoLayer()
         if filename != None:
             self.fill(filename)
+        
+        self.prepareLevels()
+        
+    def prepareLevels(self):
+    
+        arr = [BALL_TYPE_RED, BALL_TYPE_GREEN, BALL_TYPE_YELLOW, BALL_TYPE_BLUE]
+        random.shuffle(arr)
+        
+        warmups = [
+            Logic_CreateBall_Simple(self, types=arr[:2], repeat=30, ballSpeed=70, createBallInterval=1.0), # 30 secs
+            Logic_CreateBall_Simple(self, types=arr[:3], repeat=30, ballSpeed=70, createBallInterval=1.0), # 30 secs
+            Logic_CreateBall_Simple(self, types=arr, repeat=300, ballSpeed=70, createBallInterval=1.0),    # 5 mins
+        ]
+        simults = [
+            Logic_CreateBall_Simultaneous(self, types=arr, repeat=30, ballSpeed=70, createBallInterval=2.0, simul=2), # 1 min
+            Logic_CreateBall_Simultaneous(self, types=arr, repeat=60, ballSpeed=70, createBallInterval=1.0, simul=2), # 1 min
+            Logic_CreateBall_Simultaneous(self, types=arr, repeat=20, ballSpeed=70, createBallInterval=3.0, simul=3), # 1 min
+            Logic_CreateBall_Simultaneous(self, types=arr, repeat=30, ballSpeed=70, createBallInterval=2.0, simul=3), # 1 min
+            Logic_CreateBall_Simultaneous(self, types=arr, repeat=60, ballSpeed=70, createBallInterval=1.0, simul=3), # 1 min
+            Logic_CreateBall_Simultaneous(self, types=arr, repeat=15, ballSpeed=70, createBallInterval=4.0, simul=4), # 1 min
+            Logic_CreateBall_Simultaneous(self, types=arr, repeat=20, ballSpeed=70, createBallInterval=3.0, simul=4), # 1 min
+            Logic_CreateBall_Simultaneous(self, types=arr, repeat=30, ballSpeed=70, createBallInterval=2.0, simul=4), # 1 min
+            Logic_CreateBall_Simultaneous(self, types=arr, repeat=60, ballSpeed=70, createBallInterval=1.0, simul=4), # 1 min
+        ]
+                
+        self.logics_createBall = []
+        #self.logics_createBall.extend(warmups)
+        self.logics_createBall.extend(simults)
+
+        self.createBallLogic = self.logics_createBall.pop(0)
 
     def draw(self):
         self.image.blit(0, 0)
+
+    def avg(self, objects):
+        sum_x, sum_y = 0, 0
+        for obj in objects:
+            x, y = obj.position
+            sum_x += x 
+            sum_y += y
+            avg_x, avg_y = sum_x/len(objects), sum_y/len(objects)
+            avg_x, avg_y = convertCoord((avg_x, avg_y), self.hexameshLayer, self.infoLayer)
+            return avg_x, avg_y
 
     def fill(self, filename):
         f = open(filename, 'r')
@@ -105,7 +146,7 @@ class GameLayer(Layer):
                     opp = lambda x: (x+3)%6
                     assert nb_idx != -1
                     for t in args[1:]:
-                        ball = Ball(0, 0, 0, types[t])
+                        ball = Ball(types[t])
                         cursor.setBall(ball)
                         self.hexameshLayer.addBall(ball)
                         if DEBUG: print "after insertion ", cursor
@@ -145,22 +186,12 @@ class GameLayer(Layer):
         nb_hexagrid = attachedBall.hexagrid.neighbours[nb_idx]
         assert nb_hexagrid.ball == None, "Can't connect, there is a ball %s in %s" % (nb_hexagrid.ball, nb_hexagrid)
         nb_hexagrid.setBall(freeBall)
-        freeBall.velocity *= 0
+        freeBall.moveStrategy = None
     
     def addToPoppingBalls(self, balls):
-        def avg(balls):
-	    sum_x, sum_y = 0, 0
-	    for b in balls:
-		x, y = b.position
-		sum_x += x 
-		sum_y += y
-	    avg_x, avg_y = sum_x/len(balls), sum_y/len(balls)
-	    avg_x, avg_y = convertCoord((avg_x, avg_y), self.hexameshLayer, self.infoLayer)
-            return avg_x, avg_y
-        
-	points = len(balls)*5
+        points = 5*len(balls)
         self.infoLayer.addToScore(points)
-        self.infoLayer.animatePoints(points, avg(balls))
+        self.infoLayer.animatePoints(str(points), self.avg(balls), 0.25, 0.5)
         for b in balls: b.goingToPop = True
         self.hexameshLayer.poppingBalls.extend(balls)
         
@@ -176,6 +207,8 @@ class GameLayer(Layer):
                 self.hexameshLayer.poppingBalls.remove(b)
                 self.hexameshLayer.removeBall(b)
                 b.hexagrid.setBall(None)
+            if len(self.hexameshLayer.attachedBalls) == 1:
+                self.infoLayer.animatePoints("Perfect!", (0, 80), 0, 1.0)
             self.collapseUnconnectedBalls()
 
     def collapseUnconnectedBalls(self):
@@ -222,26 +255,33 @@ class GameLayer(Layer):
             oh = ball.hexagrid
             oh.setBall(None)
             h.setBall(ball)
-
-        unconnectedBalls.sort(distcmp)
-        ballsToCheckForPopping = set(unconnectedBalls[:])
         
-        while len(unconnectedBalls) > 0:
-            b = unconnectedBalls.pop(0)
+        slidingBalls = unconnectedBalls[:]
+        newComboBalls = unconnectedBalls[:]
+        ballsToCheckForPopping = set(unconnectedBalls[:])
+        slidingBalls.sort(distcmp)
+        
+        while len(slidingBalls) > 0:
+            b = slidingBalls.pop(0)
             if any([h != None and h.ball in connectedBalls for h in b.hexagrid.neighbours]):
                 connectedBalls.add(b)
             else:
                 h = closestGrid(b.hexagrid.neighbours)
                 if h.ball == None:
                     slideBall(b, h)
-                unconnectedBalls.append(b)
+                slidingBalls.append(b)
         
-        poppingBallList = []
         while len(ballsToCheckForPopping) > 0:
             b = ballsToCheckForPopping.pop()
             if b.goingToPop == False:
                 group = b.hexagrid.sameColorGroup()
                 if len(group) >= 3:
+                    for combo in self.combos:
+                        if combo.isRelated(group):
+                            if COMBO_DEBUG: print "%s is related with %s" % (combo, group)
+                            combo.incrementLevel(group)
+                            if COMBO_DEBUG: print "combo updated: %s" % combo
+                            break
                     self.addToPoppingBalls([h.ball for h in group])
                 else:
                     ballsToCheckForPopping -= set([h.ball for h in group])
@@ -309,6 +349,18 @@ class GameLayer(Layer):
         else:
             return None, None
 
+    def checkCombos(self):
+        toBeRemoved = []
+        for combo in self.combos:
+            if combo.isActive() == False:
+                toBeRemoved.append(combo)
+        for combo in toBeRemoved:
+            self.combos.remove(combo)
+            if COMBO_DEBUG: print "%s is removed" % combo
+            if combo.level > 1:
+                self.infoLayer.animatePoints("x%d Combo" % combo.level, (0, -100), 0, 1.0)
+                self.infoLayer.addToScore(combo.points * combo.level)
+        
     def step(self, dt):
         if dt == 0:
             if DEBUG: print "dt == 0, do nothing"
@@ -320,7 +372,7 @@ class GameLayer(Layer):
             attachedBall, collidePosition = self.checkCollision(freeBall)
             if attachedBall != None:
                 if attachedBall.hexagrid.distance >= LEVEL:
-                    print "GAME OVER!!!"
+                    print "GAME OVER!!! Score: ", self.infoLayer.score
                     exit()
                 self.removeBall(freeBall)
                 freeBall.position = collidePosition
@@ -328,10 +380,16 @@ class GameLayer(Layer):
                 self.hexameshLayer.addBall(freeBall)
                 group = freeBall.hexagrid.sameColorGroup()
                 if len(group) >= 3:
+                    combo = Combo(1, group)
+                    if COMBO_DEBUG: print "new combo: ", combo
+                    self.combos.append(combo)
                     self.addToPoppingBalls([h.ball for h in group])
             for ab in self.hexameshLayer.attachedBalls: ab.__verticalDist, ab.__horizontalDist = None, None
         self.updatePoppingBalls(dt)
+        self.checkCombos()
         self.createBallLogic(dt)
+        if self.createBallLogic.isExpired():
+            self.createBallLogic = self.logics_createBall.pop(0)
         if DEBUG: print "-----------------------step-------------------------"
         if DEBUG: print "attachedBalls: ", self.hexameshLayer.attachedBalls
 
@@ -342,6 +400,16 @@ class GameLayer(Layer):
     def removeBall(self, ball):
         self.remove(ball.sprite)
         self.freeBalls.remove(ball)
+
+    def on_key_press(self, key, modifiers):
+        global DEBUG
+        print key
+        if key == 32:
+            balls = [h.ball for h in self.hexameshLayer.hexamesh.rings[0] if h.ball != None and h.ball.goingToPop == False]
+            if len(balls) > 0:
+                self.addToPoppingBalls(balls)
+        elif key == 100:
+            DEBUG = not DEBUG 
 
 class InfoLayer(Layer):
 
@@ -357,17 +425,17 @@ class InfoLayer(Layer):
         self.add(self.scoreLabel)
         self.add(self.hiscoreLabel)
 
-    def animatePoints(self, points, position):
+    def animatePoints(self, points, position, delay, duration):
         @CallFuncS
         def removeObj(object):
             self.remove(object)
 	
-        label = cocos.text.Label(str(points), x=position[0], y=position[1], anchor_x='center', anchor_y='center')
+        label = cocos.text.Label(points, x=position[0], y=position[1], anchor_x='center', anchor_y='center')
         label.visible = False
         self.add(label)
-        action1 = Hide() + Delay(0.25) + Show()
-        action2 = Delay(0.25) + ScaleBy(1.5, 0.5)
-        action3 = Delay(0.75) + removeObj
+        action1 = Hide() + Delay(delay+0.01) + Show()
+        action2 = Delay(delay+0.01) + ScaleBy(1.5, duration)
+        action3 = Delay(delay+0.01+duration) + removeObj
         label.do(action1 | action2 | action3)
 
     def addToScore(self, points):
