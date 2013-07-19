@@ -10,6 +10,7 @@
 
 #import "BallMoveStrategy.h"
 #import "Ball.h"
+#import "SpaceLayer.h"
 #import "GameModel.h"
 #import "common.h"
 #import "cocos2d.h"

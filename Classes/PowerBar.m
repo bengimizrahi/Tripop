@@ -15,10 +15,27 @@
 - (void) draw {
     // 65 --- 310
     CGPoint p = self.position;
-    glDisable(GL_LINE_SMOOTH);
 	glLineWidth(5.0f);
-	glColor4ub(255, 0, 0, 50);
-	drawLine(ccp(65, p.y + 10), ccp(65 + 2.44 * power, p.y + 10));
+        
+    CGPoint vertices[4];
+    vertices[0] = ccp(65, p.y + 10);
+    vertices[1] = ccp(100, p.y + 10);
+    vertices[2] = ccp(310, p.y + 10);
+    vertices[3] = ccp(310 - (2.46 * (100 - power)), p.y + 10);
+    glVertexPointer(2, GL_FLOAT, 0, vertices);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    
+    CGFloat colors[12] = {0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f};
+    glColorPointer(4, GL_FLOAT, 0, colors);
+    glEnableClientState(GL_COLOR_ARRAY);
+    
+	glDrawArrays(GL_LINE_STRIP, 0, 3);
+	
+    glDisableClientState(GL_COLOR_ARRAY);
+    glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+    
+    glDrawArrays(GL_LINES, 2, 2);
+    glDisableClientState(GL_VERTEX_ARRAY);
 }
 
 @end

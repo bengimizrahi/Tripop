@@ -41,7 +41,7 @@
 - (id) initWithLevel:(int)aLevel gameModel:(GameModel*)aGameModel {
     if ((self = [super init])) {
         gameModel = aGameModel;
-        level = aLevel + 1;
+        level = aLevel + 2;
         hexagrids = [[NSMutableArray alloc] init];
         
         NSMutableArray* arrayy = [[NSMutableArray alloc] init];
@@ -89,6 +89,60 @@
         [arrayy release];
         
         [self __setPositions];
+    }
+    return self;
+}
+
+- (id) initWithLevel:(int)aLevel file:(NSString*)aFile gameModel:(GameModel*)aGameModel {
+    if ([self initWithLevel:aLevel gameModel:aGameModel]) {
+        if (aFile) {
+            NSError* err;
+            NSString* path = [[NSBundle mainBundle] pathForResource: @"Meshballs1" ofType: @"txt" inDirectory:nil];
+            NSString* input = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&err];
+            NSScanner* scanner = [NSScanner scannerWithString:input];
+            Hexagrid* cursor = center;
+            int dir = 0;
+            while (![scanner isAtEnd]) {
+                int count = 0;
+                NSString* command;
+                [scanner scanInt:&count];
+                [scanner scanUpToString:@" " intoString:&command];
+                [scanner scanString:@" " intoString:nil];
+                if (count == 0) {
+                    count++;
+                }
+                NSLog(@"%d%@", count, command);
+                for (int i = 0; i < count; ++i) {
+                    if ([command isEqualToString:@"c"]) {
+                        dir = (dir + 1) % 6;
+                    } else if ([command isEqualToString:@"cc"]) {
+                        dir = (dir + 5) % 6;
+                    } else if ([command isEqualToString:@"f"]) {
+                        cursor = [cursor.neighbours objectAtIndex:dir];
+                    } else if ([command isEqualToString:@"y"]) {
+                        Ball* b = [[Ball alloc] initWithType:BallType_Yellow gameModel:aGameModel];
+                        cursor.ball = b;
+                        [b release];
+                        cursor = [cursor.neighbours objectAtIndex:dir];
+                    } else if ([command isEqualToString:@"b"]) {
+                        Ball* b = [[Ball alloc] initWithType:BallType_Blue gameModel:aGameModel];
+                        cursor.ball = b;
+                        [b release];
+                        cursor = [cursor.neighbours objectAtIndex:dir];
+                    } else if ([command isEqualToString:@"r"]) {
+                        Ball* b = [[Ball alloc] initWithType:BallType_Red gameModel:aGameModel];
+                        cursor.ball = b;
+                        [b release];
+                        cursor = [cursor.neighbours objectAtIndex:dir];
+                    } else if ([command isEqualToString:@"g"]) {
+                        Ball* b = [[Ball alloc] initWithType:BallType_Green gameModel:aGameModel];
+                        cursor.ball = b;
+                        [b release];
+                        cursor = [cursor.neighbours objectAtIndex:dir];
+                    }
+                }
+            }
+        }
     }
     return self;
 }
@@ -194,7 +248,7 @@
         [arr removeLastObject];
         for (int nb_idx = 0; nb_idx < [h.neighbours count]; ++nb_idx) {
             Hexagrid* n = [h.neighbours objectAtIndex:nb_idx];
-            if (![n isNull] && n.dirty == NO) {
+            if (![n isEqual:[NSNull null]] && n.dirty == NO) {
                 CGPoint relPos = relPos6[nb_idx];
                 n.position = ccpAdd(h.position, relPos);
                 n.dirty = YES;

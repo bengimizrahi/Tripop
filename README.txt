@@ -5,15 +5,9 @@
 
 -----------o-------------o-------------o------------o----------
 
-    Near TO-DO List:
+TO-DO List:
 
-1) Power bar duzeltilecek.
- - Asagidaki gibi.
- - Color ball eklenecek
- - Makas eklenecek
-6) Add HelpScene()
-7) Add Sound Effects.
-10) RELEASE THE GAMEEEE!... :)
+5) Find better sound effects.
 
 -----------o-------------o-------------o------------o----------
 

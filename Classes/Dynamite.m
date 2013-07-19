@@ -12,6 +12,7 @@
 #import "common.h"
 #import "cocos2d.h"
 #import "GameModel.h"
+#import "TripopAppDelegate.h"
 
 @implementation Dynamite
 
@@ -35,6 +36,13 @@
     return self;
 } 
 
+- (void) __destroy {
+    // removed -> [gameModel.ballsJustDestroyed addObject:self];
+    [gameModel.attachedBalls removeObject:self];
+    [gameModel.hexameshLayer removeChild:self.node cleanup:YES];
+    self.hexagrid.ball = nil;
+}
+
 - (void) pauseActions {
     [node stopActionByTag:ACTION_ROTATE_FOREVER];
 }
@@ -46,7 +54,7 @@
 }
 
 - (void) applyActionsAfterConnectingTo:(Ball*)aAttachedBall {
-    [gameModel playExplosionWithDelay:0.2f];
+    [delegate playExplosionWithDelay:0.2f];
     Hexagrid* h = aAttachedBall.hexagrid;
     NSArray* rings = [h ringsToLevel:inpectLevel];
     for (int i = 0; i < [rings count]; ++i) {

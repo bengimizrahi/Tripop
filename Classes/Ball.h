@@ -23,6 +23,7 @@ typedef enum {
 @class CocosNode;
 @class RotatingLayer;
 @class GameModel;
+@class TripopAppDelegate;
 
 @interface Ball : NSObject<NSCoding> {
     int identifier;
@@ -36,6 +37,7 @@ typedef enum {
     BOOL isBeingDestroyed;
     
     GameModel* gameModel;
+    TripopAppDelegate* delegate;
     
     CGPoint prevPosition;
     CGFloat __verticalDist;
@@ -66,6 +68,8 @@ typedef enum {
 - (void) encodeWithCoder:(NSCoder*)aCoder;
 - (id) initWithCoder:(NSCoder*)aDecoder;
 
+- (void) __destroy;
+
 - (void) pauseActions;
 - (void) resumeActions;
 
@@ -74,7 +78,7 @@ typedef enum {
 - (CGPoint) prevPositionOnLayer:(RotatingLayer*)aLayer;
 - (void) applyActionsAfterConnectingTo:(Ball*)aAttachedBall;
 - (void) applyActionsAfterCollapsingTerminates;
-- (NSArray*) randomPathToCore;
+- (NSArray*) pathToCore;
 
 - (NSComparisonResult) compare:(Ball*)aBall;
 - (NSString*) description;

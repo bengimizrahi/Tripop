@@ -12,6 +12,7 @@
 #import "common.h"
 #import "cocos2d.h"
 #import "GameModel.h"
+#import "TripopAppDelegate.h"
 
 @implementation Lightning
 
@@ -32,6 +33,13 @@
     return self;
 }
 
+- (void) __destroy {
+    // removed -> [gameModel.ballsJustDestroyed addObject:self];
+    [gameModel.attachedBalls removeObject:self];
+    [gameModel.hexameshLayer removeChild:self.node cleanup:YES];
+    self.hexagrid.ball = nil;
+}
+
 - (void) pauseActions {
     [node stopActionByTag:ACTION_ROTATE_FOREVER];
 }
@@ -43,10 +51,10 @@
 }
 
 - (void) applyActionsAfterConnectingTo:(Ball*)aAttachedBall {
-    [gameModel playElectric];
+    [delegate playElectric];
     isBeingDestroyed = YES;
     [node runAction:action_destroy(self, gameModel)];
-    NSArray* pathToCore = [aAttachedBall randomPathToCore];
+    NSArray* pathToCore = [aAttachedBall pathToCore];
     for (Ball* b in pathToCore) {
         b.power = 0.0f;
         b.isBeingDestroyed = YES;

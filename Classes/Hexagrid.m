@@ -15,7 +15,7 @@
 @implementation Hexagrid
 
 @synthesize identifier, ball, neighbours, dirty, distance, position;
-@synthesize __ringDistance;
+@synthesize __ringDistance, __parent;
 
 - (id) init {
     if ((self = [super init])) {
@@ -74,7 +74,7 @@
         Hexagrid* h = [arr lastObject];
         [arr removeLastObject];
         for (Hexagrid* n in h.neighbours) {
-            if ((![n isNull]) && n.ball && (!n.ball.isBeingDestroyed) && n.ball.type == ball.type && (!n.dirty)) {
+            if ((![n isOutOfGameArea]) && n.ball && (!n.ball.isBeingDestroyed) && n.ball.type == ball.type && (!n.dirty)) {
                 [arr addObject:n];
                 [group addObject:n];
                 n.dirty = YES;
@@ -105,7 +105,7 @@
         if (h.__ringDistance < aLevel) {
             [[rings objectAtIndex:h.__ringDistance] addObject:h];
             for (Hexagrid* n in h.neighbours) {
-                if (![n isNull] && !n.dirty) {
+                if (![n isOutOfGameArea] && !n.dirty) {
                     n.__ringDistance = h.__ringDistance + 1;
                     n.dirty = YES;
                     [arr addObject:n];
@@ -122,7 +122,7 @@
     return [rings autorelease];
 }
 
-- (BOOL) isNull {
+- (BOOL) isOutOfGameArea {
     return distance == LEVEL + 1;
 }
 

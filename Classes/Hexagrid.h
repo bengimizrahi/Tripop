@@ -20,6 +20,7 @@
     CGPoint position;
     
     int __ringDistance;
+    Hexagrid* __parent;
 }
 
 @property (nonatomic, assign) int identifier;
@@ -30,13 +31,14 @@
 @property (nonatomic, assign) CGPoint position;
 
 @property (nonatomic, assign) int __ringDistance;
+@property (nonatomic, assign) Hexagrid* __parent;
 
 - (void)encodeWithCoder:(NSCoder*)aCoder;
 - (id)initWithCoder:(NSCoder*)aDecoder;
 
 - (NSArray*) sameColorGroup;
 - (NSArray*) ringsToLevel:(int)aLevel;
-- (BOOL) isNull;
+- (BOOL) isOutOfGameArea;
 - (NSString*) description;
 
 @end

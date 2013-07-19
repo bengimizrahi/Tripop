@@ -12,6 +12,8 @@
 #import "HexameshLayer.h"
 #import "BackgroundLayer.h"
 #import "InfoLayer.h"
+#import "TapAndMenuLayer.h"
+#import "OptionsLayer.h"
 #import "ScoresLayer.h"
 #import "GameModel.h"
 #import "TripopAppDelegate.h"
@@ -35,7 +37,7 @@
         MenuItemLabel* creditsLabel = [MenuItemLabel itemWithLabel:label target:self selector:@selector(creditsTapped:)];
         
         Menu* menu = [Menu menuWithItems:newGameLabel, optionsLabel, helpLabel, creditsLabel, nil];
-        [menu alignItemsVertically];
+        [menu alignItemsVerticallyWithPadding:25.0f];
         
         menu.position = ccpAdd(menu.position, ccp(0.0f, 35.0f));
         [self addChild:menu];
@@ -85,8 +87,8 @@
 
 - (void) playGameTapped:(id)sender {
     TripopAppDelegate* delegate = (TripopAppDelegate*)[UIApplication sharedApplication].delegate;
-    NSString* str = [[NSUserDefaults standardUserDefaults] objectForKey:@"gameSaved"];
-    if ((str && [str isEqualToString:@"YES"]) || delegate.gameModel) {
+    BOOL gameSaved = [[NSUserDefaults standardUserDefaults] boolForKey:@"gameSaved"];
+    if (gameSaved || delegate.gameModel) {
         UIAlertView* alertView = [[UIAlertView alloc] initWithTitle:@"Would you like to start a new game or continue from the last game?" message:nil delegate:self cancelButtonTitle:nil otherButtonTitles:@"New", @"Continue", nil];
         [alertView show];
         return;
@@ -95,15 +97,37 @@
 }
 
 - (void) optionsTapped:(id)sender {
-    
+    Scene* scene = [Scene node];
+    BackgroundLayer* backgroundLayer = [[[BackgroundLayer alloc] init] autorelease];
+    [scene addChild:backgroundLayer];
+    OptionsLayer* layer = [[[OptionsLayer alloc] init] autorelease];
+    [scene addChild:layer];
+    Sprite* tripop = [Sprite spriteWithFile:@"Tripop2.png"];
+    tripop.anchorPoint = ccp(0.0f, 0.0f);
+    [scene addChild:tripop];
+    TransitionScene* transitionScene = [FadeTransition transitionWithDuration:1.0f scene:scene];
+    [[Director sharedDirector] replaceScene:transitionScene];
 }
 
 - (void) helpTapped:(id)sender {
-    
+    Scene* scene = [Scene node];
+    TapAndMenuLayer* layer = [[[TapAndMenuLayer alloc] initWithImage:@"Help.png"] autorelease];
+    [scene addChild:layer];
+    TransitionScene* transitionScene = [FadeTransition transitionWithDuration:1.0f scene:scene];
+    [[Director sharedDirector] replaceScene:transitionScene];
 }
 
 - (void) creditsTapped:(id)sender {
-    
+    Scene* scene = [Scene node];
+    BackgroundLayer* backgroundLayer = [[[BackgroundLayer alloc] init] autorelease];
+    [scene addChild:backgroundLayer];
+    TapAndMenuLayer* layer = [[[TapAndMenuLayer alloc] initWithImage:@"Credits.png"] autorelease];
+    [scene addChild:layer];
+    Sprite* tripop = [Sprite spriteWithFile:@"Tripop2.png"];
+    tripop.anchorPoint = ccp(0.0f, 0.0f);
+    [scene addChild:tripop];
+    TransitionScene* transitionScene = [FadeTransition transitionWithDuration:1.0f scene:scene];
+    [[Director sharedDirector] replaceScene:transitionScene];
 }
 
 // ------------ UIAlertViewDelegate -----------------

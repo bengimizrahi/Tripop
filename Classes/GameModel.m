@@ -30,20 +30,26 @@
 - (Ball*) __checkCollisionForBall:(Ball*)aBall collidePosition:(CGPoint*)aCollidePosition;
 - (BOOL) __connectAttachedBall:(Ball*)aAttachedBall withFreeBall:(Ball*)aFreeBall;
 - (void) __collapseUnconnectedBalls;
-- (void) __destroy:(Sprite*)aSprite ball:(Ball*)aBall;
 @end
 
 @implementation GameModel
 
 @synthesize freeBalls, attachedBalls, hexamesh, levelDirector;
 @synthesize spaceLayer, hexameshLayer, infoLayer, scoresLayer;
+@synthesize ballsJustDestroyed;
+@synthesize gameIsOver;
 @synthesize __isRunning;
 
 - (id) init {
+    return [self initWithFile:nil];
+}
+
+- (id) initWithFile:(NSString*)aFile {
     if ((self = [super init])) {
+        delegate = (TripopAppDelegate*)[UIApplication sharedApplication].delegate;
         freeBalls = [[NSMutableArray alloc] init];
         attachedBalls = [[NSMutableArray alloc] init];
-        hexamesh = [[Hexamesh alloc] initWithLevel:LEVEL gameModel:self];
+        hexamesh = [[Hexamesh alloc] initWithLevel:LEVEL file:aFile gameModel:self];
         Ball* ball = [[Ball alloc] initWithType:BallType_Core gameModel:self];
         hexamesh.center.ball = ball;
         [ball release];
@@ -59,6 +65,7 @@
         ballsJustDestroyed = [[NSMutableArray alloc] init];
         [hexameshLayer addChild:hexamesh.center.ball.node];
 
+        gameIsOver = NO;
         score = 0;
         hiscoreBeforeThisGame = hiscore;
     }
@@ -94,6 +101,7 @@
 
 - (id) initWithCoder:(NSCoder*)aDecoder {
     if ((self = [super init])) {
+        delegate = (TripopAppDelegate*)[UIApplication sharedApplication].delegate;
         freeBalls = [[aDecoder decodeObjectForKey:@"freeBalls"] retain];
         attachedBalls = [[aDecoder decodeObjectForKey:@"attachedBalls"] retain];
         hexamesh = [[aDecoder decodeObjectForKey:@"hexamesh"] retain];
@@ -117,6 +125,7 @@
         hiscoreBeforeThisGame = [aDecoder decodeIntForKey:@"hiscoreBeforeThisGame"];
         
         // post-processing
+        gameIsOver = NO;
         for (Ball* b in attachedBalls) {
             if (b.isBeingDestroyed) {
                 [b.node runAction:action_scaleToZeroThanDestroy(b, self)];
@@ -198,15 +207,16 @@
 }
 
 - (void) endGame {
+    gameIsOver = YES;
     __isRunning = NO;
     [self unschedule:@selector(step:)];
+        
     NSString* message;
     if (score > hiscoreBeforeThisGame) {
         message = [NSString stringWithFormat:@"New Record! Your final score is %d", score];
     } else {
         message = [NSString stringWithFormat:@"Your final score is %d", score];
     }
-    TripopAppDelegate* delegate = (TripopAppDelegate*)[UIApplication sharedApplication].delegate;
     UIAlertView* alertView = [[UIAlertView alloc] initWithTitle:@"Game Over"
                                                          message:message
                                                         delegate:delegate
@@ -240,17 +250,18 @@
         CGPoint collidePosition;
         Ball* attachedBall = nil;
         if ((attachedBall = [self __checkCollisionForBall:freeBall collidePosition:&collidePosition])) {
-            if (attachedBall.hexagrid.distance >= LEVEL && 1 <= freeBall.type && freeBall.type <= 4) {
-                [self endGame];
-                [freeBall.node runAction:[RepeatForever actionWithAction:[Blink actionWithDuration:0.5f blinks:1]]];
-                return;
-            }
             [toBeRemovedFromFreeBalls addObject:freeBall];
             [spaceLayer removeChild:freeBall.node cleanup:YES];
             freeBall.position = collidePosition;
+            [delegate playConnect];
             if ([self __connectAttachedBall:attachedBall withFreeBall:freeBall]) {
                 [attachedBalls addObject:freeBall];
                 [hexameshLayer addChild:freeBall.node];
+                if (freeBall.hexagrid.distance > LEVEL && 1 <= freeBall.type && freeBall.type <= 4) {
+                    [self endGame];
+                    [freeBall.node runAction:[RepeatForever actionWithAction:[Blink actionWithDuration:0.5f blinks:1]]];
+                    return;
+                }                
                 [freeBall applyActionsAfterConnectingTo:attachedBall];
             } else {
                 NSLog(@"cannot connect");
@@ -341,7 +352,7 @@
     CGPoint p2 = aFreeBall.position;
     CGFloat angle = angleBetween(p1, p2);
     CGPoint p = ccpSub(p2, p1);
-    int nb_idx;
+    int nb_idx = 0;
     if (p.x >= 0 && p.y >= 0 && 0 <= angle && angle <= M_PI_3) nb_idx = 0;
     else if (p.y >= 0 && M_PI_3 <= angle && angle <= 2*M_PI_3) nb_idx = 1;
     else if (p.x <= 0 && p.y >= 0 && 2*M_PI_3 <= angle && angle <= M_PI) nb_idx = 2;
@@ -378,7 +389,7 @@
         Hexagrid* h = [arr lastObject];
         [arr removeLastObject];
         for (Hexagrid* n in h.neighbours) {
-            if (![n isNull] && n.ball && !n.dirty) {
+            if (![n isOutOfGameArea] && n.ball && !n.dirty) {
                 [arr addObject:n];
                 [connectedGrids addObject:n];
                 n.dirty = YES;
@@ -408,12 +419,16 @@
     NSMutableSet* ballsToCheckForFurtherActions = [[NSMutableSet alloc] initWithArray:disconnectedBalls];
     [collapsingBalls sortUsingSelector:@selector(compare:)];
     
+    int numUnDestroyedConnectedBalls = 0;
     while ([collapsingBalls count] > 0) {
         Ball* b = [collapsingBalls objectAtIndex:0];
+        if (!b.isBeingDestroyed) {
+            numUnDestroyedConnectedBalls += 1;
+        }
         [collapsingBalls removeObject:b];
         BOOL touchesToAtLeastOneConnectedBall = NO;
         for (Hexagrid* n in b.hexagrid.neighbours) {
-            if (![n isNull] && n.ball && [connectedBalls member:n.ball]) {
+            if (![n isOutOfGameArea] && n.ball && [connectedBalls member:n.ball]) {
                 touchesToAtLeastOneConnectedBall = YES;
             }
         }
@@ -422,7 +437,7 @@
         } else {
             Hexagrid* closestGrid = nil;
             for (Hexagrid* n in b.hexagrid.neighbours) {
-                if (![n isNull]) {
+                if (![n isOutOfGameArea]) {
                     if (!closestGrid) {
                         closestGrid = n;
                     } else {
@@ -441,7 +456,9 @@
         }
     }
     [collapsingBalls release];
-    [self playCollapse];
+    if (numUnDestroyedConnectedBalls > 0) {
+        [delegate playCollapse];
+    }
 
     while ([ballsToCheckForFurtherActions count] > 0) {
         Ball* b = [ballsToCheckForFurtherActions anyObject];
@@ -454,41 +471,6 @@
 end:
     [disconnectedBalls release];
     [connectedBalls release];
-}
-
-- (void) __destroy:(Sprite*)aSprite ball:(Ball*)aBall {
-    [ballsJustDestroyed addObject:aBall];
-    [attachedBalls removeObject:aBall];
-    [hexameshLayer removeChild:aSprite cleanup:YES];
-    aBall.hexagrid.ball = nil;
-}
-
-- (void) playExplosion {
-    //[[SimpleAudioEngine sharedEngine] playEffect:@"explosion1.wav"];
-}
-
-- (void) playExplosionWithDelay:(ccTime)aDelay {
-//    [self runAction:[Sequence actions:
-//                     [DelayTime actionWithDuration:aDelay],
-//                     [CallFunc actionWithTarget:self selector:@selector(playExplosion)], nil]];    
-}
-
-- (void) playPop {
-//    [[SimpleAudioEngine sharedEngine] playEffect:@"pop1.wav"];
-}
-
-- (void) playPopWithDelay:(ccTime)aDelay {
-//    [self runAction:[Sequence actions:
-//                     [DelayTime actionWithDuration:aDelay],
-//                     [CallFunc actionWithTarget:self selector:@selector(playPop)], nil]];
-}
-
-- (void) playElectric {
-//    [[SimpleAudioEngine sharedEngine] playEffect:@"electric2.wav"];
-}
-
-- (void) playCollapse {
-//    [[SimpleAudioEngine sharedEngine] playEffect:@"collapse1.wav"];
 }
 
 @end

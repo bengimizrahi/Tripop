@@ -157,5 +157,5 @@ Action* action_whiteBlinkThanDestroy(Ball* aBall, GameModel* gameModel) {
 }
 
 Action* action_destroy(Ball* aBall, GameModel* gameModel) {
-    return [CallFuncND actionWithTarget:gameModel selector:@selector(__destroy:ball:) data:aBall];
+    return [CallFunc actionWithTarget:aBall selector:@selector(__destroy)];
 }

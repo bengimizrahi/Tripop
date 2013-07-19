@@ -16,6 +16,7 @@
 #import "GameModel.h"
 #import "PowerBar.h"
 #import "InfoLayer.h"
+#import "SpaceLayer.h"
 #import "common.h"
 
 @implementation LevelDirector
@@ -48,11 +49,6 @@
 
 - (void) execute:(CGFloat)dt gameModel:(GameModel*)aGameModel {
     NSAssert(NO, @"Should not call this");
-}
-
-- (BOOL) powerActionRequested:(GameModel*)aGameModel {
-    NSAssert(NO, @"Should not call this");
-    return NO;
 }
 
 @end
@@ -200,14 +196,16 @@
     if (power == 0) {
         return NO;
     }
-    Ball* ball;
+    Ball* ball = nil;
     if (0 < power && power <= 25) {
         ball = [[Dynamite alloc] initWithInpectLevel:1 gameModel:aGameModel];
     } else if (25 < power && power <= 50) {
         ball = [[Dynamite alloc] initWithInpectLevel:2 gameModel:aGameModel];
     } else if (50 < power && power <= 75) {
         ball = [[Dynamite alloc] initWithInpectLevel:3 gameModel:aGameModel];
-    } else if (75 <= power) {
+    } else if (75 < power && power < 100) {
+        ball = [[Dynamite alloc] initWithInpectLevel:4 gameModel:aGameModel];
+    } else if (100 == power) {
         ball = [[Lightning alloc] initWithGameModel:aGameModel];
     }
     CGFloat angle = CCRANDOM_0_1() * (2*M_PI);

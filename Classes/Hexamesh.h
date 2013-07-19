@@ -24,7 +24,8 @@
 @property (nonatomic, readonly) NSMutableArray* hexagrids;
 
 - (id) initWithLevel:(int)aLevel gameModel:(GameModel*)aGameModel;
-- (void)encodeWithCoder:(NSCoder*)aCoder;
-- (id)initWithCoder:(NSCoder*)aDecoder;
+- (id) initWithLevel:(int)aLevel file:(NSString*)aFile gameModel:(GameModel*)aGameModel;
+- (void) encodeWithCoder:(NSCoder*)aCoder;
+- (id) initWithCoder:(NSCoder*)aDecoder;
 
 @end

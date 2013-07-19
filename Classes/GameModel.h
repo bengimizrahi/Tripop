@@ -17,8 +17,11 @@
 @class InfoLayer;
 @class ScoresLayer;
 @class LevelDirector;
+@class TripopAppDelegate;
 
 @interface GameModel : Layer<NSCoding, UIAlertViewDelegate> {
+    TripopAppDelegate* delegate;
+    
     NSMutableArray* freeBalls;
     NSMutableArray* attachedBalls;
     Hexamesh* hexamesh;
@@ -31,7 +34,8 @@
 
     NSMutableArray* ballsJustDestroyed;
     CGFloat prevRotation;
-    
+
+    BOOL gameIsOver;
     int score;
     int hiscoreBeforeThisGame;
     
@@ -48,8 +52,13 @@
 @property (nonatomic, readonly) InfoLayer* infoLayer;
 @property (nonatomic, readonly) ScoresLayer* scoresLayer;
 
+@property (nonatomic, readonly) NSMutableArray* ballsJustDestroyed;
+
+@property (nonatomic, readonly) BOOL gameIsOver;
+
 @property (nonatomic, assign) BOOL __isRunning;
 
+- (id) initWithFile:(NSString*)aFile;
 - (void) encodeWithCoder:(NSCoder*)aCoder;
 - (id) initWithCoder:(NSCoder*)aDecoder;
 
@@ -63,12 +72,5 @@
 - (void) powerActionRequested;
 - (void) ballsDestroyed:(NSArray*)aBalls;
 - (void) addPointsToScore:(int)aPoints;
-
-- (void) playExplosion;
-- (void) playExplosionWithDelay:(ccTime)aDelay;
-- (void) playPop;
-- (void) playPopWithDelay:(ccTime)aDelay;
-- (void) playElectric;
-- (void) playCollapse;
 
 @end

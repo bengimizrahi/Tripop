@@ -14,7 +14,7 @@
 #import "LevelDirector.h"
 #import "GameModel.h"
 #import "common.h"
-#import "cocos2d.h"
+#import "SimpleAudioEngine.h"
                     
 @implementation TripopAppDelegate
 
@@ -79,6 +79,11 @@
 
 - (void)alertView:(UIAlertView*)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
     if (alertView.tag == ALERTVIEW_GAME_ENDED) {
+        NSUserDefaults* standardUserDefaults = [NSUserDefaults standardUserDefaults];
+        if (standardUserDefaults) {
+            [standardUserDefaults setBool:NO forKey:@"gameSaved"];
+            [standardUserDefaults synchronize];
+        }        
         Scene* scene = [Scene node];
         [scene addChild:[BackgroundLayer node]];
         InfoLayer* infoLayer = [InfoLayer node];
@@ -88,11 +93,6 @@
         TransitionScene* transitionScene = [FadeTransition transitionWithDuration:1.0f scene:scene withColor:ccBLACK];
         [[Director sharedDirector] replaceScene: transitionScene];
         self.gameModel = nil;
-        NSUserDefaults* standardUserDefaults = [NSUserDefaults standardUserDefaults];
-        if (standardUserDefaults) {
-            [standardUserDefaults setObject:@"NO" forKey:@"gameSaved"];
-            [standardUserDefaults synchronize];
-        }
     }
     [alertView release];
 }
@@ -105,17 +105,17 @@
     NSArray* paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
     NSString* documentsDirectory = [paths objectAtIndex:0];
     NSString* file = [documentsDirectory stringByAppendingPathComponent:@"savedGame.archive"];    
-    if (gameModel) {
+    if (gameModel && !gameModel.gameIsOver) {
         if (![NSKeyedArchiver archiveRootObject:gameModel toFile:file]) {
             NSLog(@"Error in archiving. No archive saved.");
         }
     }
     NSUserDefaults* standardUserDefaults = [NSUserDefaults standardUserDefaults];
     if (standardUserDefaults) {
-        if (gameModel) {
-            [standardUserDefaults setObject:@"YES" forKey:@"gameSaved"];
+        if (gameModel && !gameModel.gameIsOver) {
+            [standardUserDefaults setBool:YES forKey:@"gameSaved"];
         } else {
-            [standardUserDefaults setObject:@"NO" forKey:@"gameSaved"];
+            [standardUserDefaults setBool:NO forKey:@"gameSaved"];
         }
         [standardUserDefaults setObject:[NSString stringWithFormat:@"%d", hiscore] forKey:@"hiscore"];
         [standardUserDefaults synchronize];
@@ -125,6 +125,38 @@
 
 - (void)applicationSignificantTimeChange:(UIApplication *)application {
 	[[Director sharedDirector] setNextDeltaTimeZero:YES];
+}
+
+- (void) playExplosion {
+    [[SimpleAudioEngine sharedEngine] playEffect:@"explosion1.wav"];
+}
+
+- (void) playExplosionWithDelay:(ccTime)aDelay {
+    [[Director sharedDirector].runningScene runAction:[Sequence actions:
+                     [DelayTime actionWithDuration:aDelay],
+                     [CallFunc actionWithTarget:self selector:@selector(playExplosion)], nil]];    
+}
+
+- (void) playPop {
+    [[SimpleAudioEngine sharedEngine] playEffect:@"pop.wav"];
+}
+
+- (void) playPopWithDelay:(ccTime)aDelay {
+    [[Director sharedDirector].runningScene runAction:[Sequence actions:
+                     [DelayTime actionWithDuration:aDelay],
+                     [CallFunc actionWithTarget:self selector:@selector(playPop)], nil]];
+}
+
+- (void) playElectric {
+    [[SimpleAudioEngine sharedEngine] playEffect:@"electricity2.wav"];
+}
+
+- (void) playCollapse {
+    [[SimpleAudioEngine sharedEngine] playEffect:@"collapse1.wav"];
+}
+
+- (void) playConnect {
+    [[SimpleAudioEngine sharedEngine] playEffect:@"connect3.wav"];
 }
 
 @end
