@@ -1,0 +1,2 @@
+- on_mouse_drag, just save the current rotate value in a temporary variable
+- the layer's rotate value must be updated at step()
