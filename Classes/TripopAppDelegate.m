@@ -8,12 +8,9 @@
 
 #import "TripopAppDelegate.h"
 
-//#import "InfoLayer.h"
-#import "ForegroundLayer.h"
-#import "HexameshLayer.h"
-#import "SpaceLayer.h"
-#import "GameModel.h"
 #import "BackgroundLayer.h"
+#import "InfoLayer.h"
+#import "MainMenuLayer.h"
 #import "common.h"
 #import "cocos2d.h"
                     
@@ -51,14 +48,8 @@
 	initializeCommon();
     Scene* scene = [Scene node];
     [scene addChild:[BackgroundLayer node]];
-    self.gameModel = [GameModel node];
-    [scene addChild:gameModel];
-    [scene addChild:gameModel.spaceLayer];
-    [scene addChild:gameModel.hexameshLayer];
-    [scene addChild:[ForegroundLayer node]];
-    //  [scene addChild:gameModel.infoLayer];
-    
-    [gameModel startGame];
+    [scene addChild:[InfoLayer node]];
+    [scene addChild:[MainMenuLayer node]];
 	[[Director sharedDirector] runWithScene: scene];
 }
 

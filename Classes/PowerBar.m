@@ -13,7 +13,7 @@
 @synthesize power;
 
 - (void) draw {
-    // 62 --- 310
+    // 65 --- 310
     CGPoint p = self.position;
     glDisable(GL_LINE_SMOOTH);
 	glLineWidth(5.0f);
@@ -35,17 +35,21 @@
     return self;
 }
 
+- (void) addPower:(CGFloat)aPower {
+    self.power = MIN(100, self.power + aPower);
+}
+
 - (void) dealloc {
     [powerDrawing release];
     [super dealloc];
 }
 
-- (void) setPower:(CGFloat)aPower {
-    powerDrawing.power = aPower;
-}
-
 - (CGFloat) power {
     return powerDrawing.power;
+}
+
+- (void) setPower:(CGFloat)aPower {
+    powerDrawing.power = aPower;
 }
 
 @end

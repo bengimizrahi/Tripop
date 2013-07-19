@@ -18,6 +18,8 @@
     BOOL dirty;
     int distance;
     CGPoint position;
+    
+    int __ringDistance;
 }
 
 @property (nonatomic, assign) int identifier;
@@ -27,7 +29,10 @@
 @property (nonatomic, assign) int distance;
 @property (nonatomic, assign) CGPoint position;
 
+@property (nonatomic, assign) int __ringDistance;
+
 - (NSArray*) sameColorGroup;
+- (NSArray*) ringsToLevel:(int)aLevel;
 
 - (NSString*) description;
 

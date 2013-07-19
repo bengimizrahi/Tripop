@@ -10,14 +10,19 @@
 
 #import "BallMoveStrategy.h"
 #import "Ball.h"
+#import "Dynamite.h"
+#import "Lightning.h"
+#import "PowerBar.h"
 #import "SpaceLayer.h"
+#import "InfoLayer.h"
+#import "ScoresLayer.h"
 #import "GameModel.h"
 #import "common.h"
 #import "cocos2d.h"
 
 @implementation Level
 
-@synthesize expired, gameModel;
+@synthesize expired;
 
 - (id) initWithBallTypes:(NSArray*)aBallTypes repeat:(int)aRepeat ballSpeed:(CGFloat)aBallSpeed createBallInterval:(CGFloat)aCreateBallInterval {
     if ((self = [super init])) {
@@ -38,12 +43,13 @@
 }
 
 - (void) execute:(CGFloat)dt {
-    NSAssert(gameModel, @"gameModel is nil");
     createBallTimer += dt;
     if (createBallTimer > createBallInterval) {
         createBallTimer = 0.0f;
         BallType type = [[ballTypes objectAtIndex:(int)(CCRANDOM_0_1() * [ballTypes count])] intValue];
         Ball* ball = [[Ball alloc] initWithType:type];
+        ball.points = 5;
+        ball.power = 1.0f;
         CGFloat angle = CCRANDOM_0_1() * (2*M_PI);
         BallMoveStrategy* aBallMoveStrategy = [[LineerMoveStrategy alloc] initWithBall:ball approachAngle:angle speed:ballSpeed];
         ball.moveStrategy = aBallMoveStrategy;
@@ -52,10 +58,56 @@
         if (ballsLeft == 0) {
             expired = YES;
         }
-        [gameModel.freeBalls addObject:ball];
-        [gameModel.spaceLayer addChild:ball.node];
+        [gameModel().freeBalls addObject:ball];
+        [gameModel().spaceLayer addChild:ball.node];
         [ball release];
     }
+}
+
+- (void) ballsDestroyed:(NSArray*)aBalls {
+    if ([aBalls count] == 1) {
+        Ball* b = [aBalls objectAtIndex:0];
+        if (!(1 <= b.type && b.type <= 4)) {
+            return;
+        }
+    }   
+    int totalPointsEarned = 0;
+    CGFloat totalPowerEarned = 0.0f;
+    for (Ball* b in aBalls) {
+        totalPointsEarned += b.points;
+        totalPowerEarned += b.power;
+    }
+    totalPowerEarned = 5*powf(MAX(totalPowerEarned - 2.0f, 0.0f), 2);
+    [gameModel().infoLayer.powerBar addPower:totalPowerEarned];
+    [gameModel().scoresLayer addPoints:totalPointsEarned animateAtPosition:centerPosition(aBalls) duration:0.4f scaleBy:2.0f];
+    [gameModel() addPointsToScore:totalPointsEarned];
+}
+
+- (BOOL) powerActionRequested {
+    CGFloat power = gameModel().infoLayer.powerBar.power;
+    if (power == 0) {
+        return NO;
+    }
+    Ball* ball;
+    if (0 < power && power <= 20) {
+        ball = [[Dynamite alloc] initWithInpectLevel:1];
+    } else if (20 < power && power <= 40) {
+        ball = [[Dynamite alloc] initWithInpectLevel:2];
+    } else if (40 < power && power <= 60) {
+        ball = [[Dynamite alloc] initWithInpectLevel:3];
+    } else if (60 < power && power <= 80) {
+        ball = [[Lightning alloc] init];
+    } else if (80 <= power) {
+        ball = [[Dynamite alloc] initWithInpectLevel:4];
+    }
+    CGFloat angle = CCRANDOM_0_1() * (2*M_PI);
+    BallMoveStrategy* aBallMoveStrategy = [[SpiralMoveStrategy alloc] initWithBall:ball approachAngle:angle angularSpeed:M_PI_4 speed:15];
+    ball.moveStrategy = aBallMoveStrategy;
+    [aBallMoveStrategy release];
+    [gameModel().freeBalls addObject:ball];
+    [gameModel().spaceLayer addChild:ball.node];
+    [ball release];
+    return YES;
 }
 
 - (NSString*) description {
@@ -82,7 +134,6 @@
 }
 
 - (void) execute:(CGFloat)dt {
-    NSAssert(gameModel, @"gameModel is nil");
     createBallTimer += dt;
     if (createBallTimer > createBallInterval) {
         createBallTimer = 0.0f;
@@ -92,6 +143,8 @@
         [mutableBallTypes addObject:[NSNumber numberWithInt:lastBallType]];
         lastBallType = type;
         Ball* ball = [[Ball alloc] initWithType:type];
+        ball.points = 5;
+        ball.power = 1.0f;
         CGFloat angle = CCRANDOM_0_1() * (2*M_PI);
         BallMoveStrategy* aBallMoveStrategy = [[LineerMoveStrategy alloc] initWithBall:ball approachAngle:angle speed:ballSpeed];
         ball.moveStrategy = aBallMoveStrategy;
@@ -100,8 +153,8 @@
         if (ballsLeft == 0) {
             expired = YES;
         }
-        [gameModel.freeBalls addObject:ball];
-        [gameModel.spaceLayer addChild:ball.node];
+        [gameModel().freeBalls addObject:ball];
+        [gameModel().spaceLayer addChild:ball.node];
         [ball release];
     }
 }
@@ -124,7 +177,6 @@
 }
 
 - (void) execute:(CGFloat)dt {
-    NSAssert(gameModel, @"gameModel is nil");
     createBallTimer += dt;
     if (createBallTimer > createBallInterval) {
         createBallTimer = 0.0f;
@@ -132,12 +184,14 @@
         CGFloat angle = CCRANDOM_0_1() * (2*M_PI);
         for (int i = 0; i < simul; ++i) {
             Ball* ball = [[Ball alloc] initWithType:[[mutableBallTypes objectAtIndex:i] intValue]];
+            ball.points = 5;
+            ball.power = 1.0f;
             BallMoveStrategy* aBallMoveStrategy = [[LineerMoveStrategy alloc] initWithBall:ball approachAngle:angle speed:ballSpeed];
             ball.moveStrategy = aBallMoveStrategy;
             [aBallMoveStrategy release];
             angle += angleStep;
-            [gameModel.freeBalls addObject:ball];
-            [gameModel.spaceLayer addChild:ball.node];
+            [gameModel().freeBalls addObject:ball];
+            [gameModel().spaceLayer addChild:ball.node];
             [ball release];
         }        
         ballsLeft -= 1;

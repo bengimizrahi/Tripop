@@ -15,7 +15,6 @@
 }
 
 - (id) initWithBall:(Ball*)aBall;
-
 - (void) moveByDeltaTime:(CGFloat)dt;
 
 @end
@@ -28,7 +27,31 @@
 - (id) initWithBall:(Ball*)aBall 
       approachAngle:(CGFloat)aApproachAngle
               speed:(CGFloat)aSpeed;
-
 - (void) moveByDeltaTime:(CGFloat)dt;
+@end
 
+@interface SinusMoveStrategy : BallMoveStrategy {
+    CGFloat angularSpeed;
+    CGFloat horizontalSpeed;
+    CGFloat angle;
+}
+
+- (id) initWithBall:(Ball*)aBall
+       angularSpeed:(CGFloat)aAngularSpeed
+    horizontalSpeed:(CGFloat)aHorizontalSpeed;
+- (void) moveByDeltaTime:(CGFloat)dt;
+@end
+
+@interface SpiralMoveStrategy : BallMoveStrategy {
+    CGFloat angularSpeed;
+    CGFloat speed;
+    CGFloat distance;
+    CGFloat angle;
+}
+
+- (id) initWithBall:(Ball*)aBall
+      approachAngle:(CGFloat)aApproachAngle
+       angularSpeed:(CGFloat)aAngularSpeed 
+              speed:(CGFloat)aSpeed;
+- (void) moveByDeltaTime:(CGFloat)dt;
 @end

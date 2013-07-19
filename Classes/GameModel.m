@@ -8,12 +8,17 @@
 
 #import "GameModel.h"
 
+#import "BallMoveStrategy.h"
+#import "Dynamite.h"
+#import "Lightning.h"
 #import "Ball.h"
 #import "Hexagrid.h"
 #import "Hexamesh.h"
-#import "HexameshLayer.h"
+#import "PowerBar.h"
 #import "SpaceLayer.h"
-//#import "InfoLayer.h"
+#import "HexameshLayer.h"
+#import "InfoLayer.h"
+#import "ScoresLayer.h"
 #import "Level.h"
 #import "common.h"
 
@@ -28,8 +33,8 @@
 
 @implementation GameModel
 
-@synthesize freeBalls, attachedBalls, hexamesh, levels;
-@synthesize spaceLayer, hexameshLayer; //, infoLayer
+@synthesize freeBalls, attachedBalls, hexamesh, currentLevel;
+@synthesize spaceLayer, hexameshLayer, infoLayer, scoresLayer;
 
 - (id) init {
     if ((self = [super init])) {
@@ -41,10 +46,16 @@
         
         [self __prepareLevels];
         
-        spaceLayer = [[SpaceLayer node] retain];
-        hexameshLayer = [[HexameshLayer node] retain];
+        spaceLayer = [[SpaceLayer alloc] init];
+        hexameshLayer = [[HexameshLayer alloc] init];
+        infoLayer = [[InfoLayer alloc] init];
+        scoresLayer = [[ScoresLayer alloc] init];
+
+        ballsJustDestroyed = [[NSMutableArray alloc] init];
         [hexameshLayer addChild:hexamesh.center.ball.node];
-//      infoLayer = [[InfoLayer node] retain];
+
+        score = 0;
+        hiScore = 0;
     }
     return self;
 }
@@ -54,9 +65,22 @@
     [attachedBalls release];
     [poppingBalls release];
     [hexamesh release];
+    
     [levels release];
+    
+    [spaceLayer release];
+    [hexameshLayer release];
+    [infoLayer release];
+    [scoresLayer release];
 
+    [ballsJustDestroyed release];
     [super dealloc];
+}
+
+- (void) powerActionRequested {
+    if ([currentLevel powerActionRequested]) {
+        infoLayer.powerBar.power = 0;
+    }
 }
 
 NSMutableArray* convertToNSArray(BallType* arr, NSInteger n) {
@@ -91,11 +115,18 @@ NSMutableArray* convertToNSArray(BallType* arr, NSInteger n) {
     [levels addObjectsFromArray:simults];
     
     currentLevel = [levels objectAtIndex:0];
-    currentLevel.gameModel = self;
 }
 
 - (void) startGame {
     [self schedule:@selector(step:)];
+}
+
+- (void) pauseGame {
+    [self unschedule:@selector(step:)];
+}
+
+- (void) resumeGame {
+    [self startGame];
 }
 
 - (void) endGame {
@@ -123,28 +154,18 @@ NSMutableArray* convertToNSArray(BallType* arr, NSInteger n) {
         CGPoint collidePosition;
         Ball* attachedBall = nil;
         if ((attachedBall = [self __checkCollisionForBall:freeBall collidePosition:&collidePosition])) {
-            if (/*freeBall.ballAction*/0) {
-                // apply ball action
+            if (attachedBall.hexagrid.distance == LEVEL) {
+                [self endGame];
+            }
+            [toBeRemovedFromFreeBalls addObject:freeBall];
+            [spaceLayer removeChild:freeBall.node cleanup:YES];
+            freeBall.position = collidePosition;
+            if ([self __connectAttachedBall:attachedBall withFreeBall:freeBall]) {
+                [attachedBalls addObject:freeBall];
+                [hexameshLayer addChild:freeBall.node];
+                [freeBall applyActionsAfterConnectingTo:attachedBall];
             } else {
-                if (attachedBall.hexagrid.distance == LEVEL) {
-                    [self endGame];
-                }
-                [toBeRemovedFromFreeBalls addObject:freeBall];
-                [spaceLayer removeChild:freeBall.node cleanup:YES];
-                freeBall.position = collidePosition;
-                if ([self __connectAttachedBall:attachedBall withFreeBall:freeBall]) {
-                    [attachedBalls addObject:freeBall];
-                    [hexameshLayer addChild:freeBall.node];
-                    NSArray* group = [freeBall.hexagrid sameColorGroup];
-                    if ([group count] >=3) {
-                        for (Hexagrid* h in group) {
-                            [h.ball.node runAction:action_scaleTheBallToZeroThanDestroyIt(h.ball)];
-                            h.ball.isBeingDestroyed = YES;
-                        }
-                    }
-                } else {
-                    NSLog(@"cannot connect");
-                }
+                NSLog(@"cannot connect");
             }
         }
     }
@@ -152,16 +173,16 @@ NSMutableArray* convertToNSArray(BallType* arr, NSInteger n) {
         [freeBalls removeObject:ball];
     }
     [toBeRemovedFromFreeBalls release];
-    if (ballsJustDestroyed > 0) {
+    if ([ballsJustDestroyed count] > 0) {
+        [currentLevel ballsDestroyed:ballsJustDestroyed];
         [self __collapseUnconnectedBalls];
-        ballsJustDestroyed = 0;
+        [ballsJustDestroyed removeAllObjects];
     }
     [currentLevel execute:dt];
     if (currentLevel.expired) {
         [levels removeObjectAtIndex:0];
         NSAssert([levels count] > 0, @"We are out of 'levels'");
         currentLevel = [levels objectAtIndex:0];
-        currentLevel.gameModel = self;
     }
 }
 
@@ -240,6 +261,13 @@ NSMutableArray* convertToNSArray(BallType* arr, NSInteger n) {
     return YES;
 }
 
+- (void) addPointsToScore:(int)aPoints {
+    score += aPoints;
+    hiScore = MAX(score, hiScore);
+    [infoLayer.scoreValueLabel setString:[NSString stringWithFormat:@"%08d", score]];
+    [infoLayer.hiScoreValueLabel setString:[NSString stringWithFormat:@"%08d", hiScore]];
+}
+
 - (void) __collapseUnconnectedBalls {
     NSMutableArray* arr = [[NSMutableArray alloc] initWithObjects:hexamesh.center, nil];
     NSMutableArray* connectedGrids = [[NSMutableArray alloc] initWithObjects:hexamesh.center, nil];
@@ -275,7 +303,7 @@ NSMutableArray* convertToNSArray(BallType* arr, NSInteger n) {
     }
     
     NSMutableArray* collapsingBalls = [[NSMutableArray alloc] initWithArray:disconnectedBalls];
-    NSMutableSet* ballsToCheckForPopping = [[NSMutableSet alloc] initWithArray:disconnectedBalls];
+    NSMutableSet* ballsToCheckForFurtherActions = [[NSMutableSet alloc] initWithArray:disconnectedBalls];
     [collapsingBalls sortUsingSelector:@selector(compare:)];
     
     while ([collapsingBalls count] > 0) {
@@ -311,34 +339,24 @@ NSMutableArray* convertToNSArray(BallType* arr, NSInteger n) {
         }
     }
     [collapsingBalls release];
-    while ([ballsToCheckForPopping count] > 0) {
-        Ball* b = [ballsToCheckForPopping anyObject];
-        [ballsToCheckForPopping removeObject:b];
+    while ([ballsToCheckForFurtherActions count] > 0) {
+        Ball* b = [ballsToCheckForFurtherActions anyObject];
+        [ballsToCheckForFurtherActions removeObject:b];
         if (!b.isBeingDestroyed) {
-            NSArray* group = [b.hexagrid sameColorGroup];
-            if ([group count] >= 3) {
-                for (Hexagrid* h in group) {
-                    [h.ball.node runAction:action_scaleTheBallToZeroThanDestroyIt(h.ball)];
-                    h.ball.isBeingDestroyed = YES;
-                }
-            } else {
-                NSSet* set = [[NSSet alloc] initWithArray:group];
-                [ballsToCheckForPopping minusSet:set];
-                [set release];
-            }
+            [b applyActionsAfterCollapsingTerminates];
         }
     }
-    [ballsToCheckForPopping release];
+    [ballsToCheckForFurtherActions release];
 end:
     [disconnectedBalls release];
     [connectedBalls release];
 }
 
 - (void) __destroy:(Sprite*)aSprite ball:(Ball*)aBall {
+    [ballsJustDestroyed addObject:aBall];
     [attachedBalls removeObject:aBall];
     [hexameshLayer removeChild:aSprite cleanup:YES];
     aBall.hexagrid.ball = nil;
-    ballsJustDestroyed += 1;
 }
 
 @end

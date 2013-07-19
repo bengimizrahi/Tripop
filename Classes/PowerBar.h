@@ -23,6 +23,6 @@
 
 @property (nonatomic) CGFloat power;
 
-- (id) init;
+- (void) addPower:(CGFloat)aPower;
 
 @end

@@ -14,7 +14,8 @@ typedef enum {
     BallType_Green,
     BallType_Blue,
     BallType_Yellow,
-    BallType_FireBall,
+    BallType_Dynamite,
+    BallType_Lightning,
 } BallType;
 
 @class BallMoveStrategy;
@@ -26,6 +27,8 @@ typedef enum {
     int identifier;
     CocosNode* node;
     
+    int points;
+    CGFloat power;
     BallType type;
     BallMoveStrategy* moveStrategy;
     Hexagrid* hexagrid;
@@ -40,6 +43,8 @@ typedef enum {
 @property (nonatomic, readonly) int identifier;
 @property (nonatomic, readonly) CocosNode* node;
 
+@property (nonatomic, assign) int points;
+@property (nonatomic, assign) CGFloat power;
 @property (nonatomic, readonly) BallType type;
 @property (nonatomic, retain) BallMoveStrategy* moveStrategy;
 @property (nonatomic, retain) Hexagrid* hexagrid;
@@ -56,6 +61,9 @@ typedef enum {
 - (void) moveByDeltaTime:(CGFloat)dt;
 - (CGPoint) positionOnLayer:(RotatingLayer*)aLayer;
 - (CGPoint) prevPositionOnLayer:(RotatingLayer*)aLayer;
+- (void) applyActionsAfterConnectingTo:(Ball*)aAttachedBall;
+- (void) applyActionsAfterCollapsingTerminates;
+- (NSArray*) randomPathToCore;
 
 - (NSComparisonResult) compare:(Ball*)aBall;
 - (NSString*) description;

@@ -7,6 +7,9 @@
  *
  */
 
+#include "Ball.h"
+#include "Hexagrid.h"
+#include "HexameshLayer.h"
 #include "GameModel.h"
 #include "TripopAppDelegate.h"
 #include "common.h"
@@ -29,6 +32,14 @@ void initializeCommon() {
     relPos6[3] = ccp(2 * BR * cosf(7 * M_PI_6), 2 * BR * sinf(7 * M_PI_6));
     relPos6[4] = ccp(0, -2 * BR);
     relPos6[5] = ccp(2 * BR * cosf(11 * M_PI_6), 2 * BR * sinf(11 * M_PI_6));
+    
+    [[TextureMgr sharedTextureMgr] addImage:@"Lightning.png"];
+    [BitmapFontAtlas bitmapFontAtlasWithString:@"0123456789" fntFile:@"silkworm.fnt"];
+}
+
+GameModel* gameModel() {
+    TripopAppDelegate* delegate = [UIApplication sharedApplication].delegate;
+    return delegate.gameModel;
 }
 
 NSString* CGPointDescription(CGPoint p) {
@@ -74,10 +85,56 @@ NSMutableArray* shuffle(NSMutableArray* array) {
     return array;
 }
 
-Action* action_scaleTheBallToZeroThanDestroyIt(Ball* aBall) {
-    TripopAppDelegate* delegate = [UIApplication sharedApplication].delegate;
-    GameModel* gameModel = delegate.gameModel;
+id randomChoice(NSArray* arr) {
+    return [arr objectAtIndex:(int)(CCRANDOM_0_1() * [arr count])];
+}
+
+NSArray* ballsIn(NSArray* hexagrids) {
+    NSMutableArray* arr = [[NSMutableArray alloc] init];
+    for (Hexagrid* h in hexagrids) {
+        [arr addObject:h.ball];
+    }
+    return [arr autorelease];
+}
+
+CGPoint centerPosition(NSArray* aBalls) {
+    CGPoint total = ccp(0.0f, 0.0f);
+    for (Ball* b in aBalls) {
+        CGFloat angle = CC_DEGREES_TO_RADIANS(gameModel().hexameshLayer.rotation);
+        CGPoint r = ccpRotate(ccpForAngle(-angle), b.position);
+        total = ccpAdd(total, r);
+    }
+    CGPoint average = ccpMult(total, 1.0f / [aBalls count]);
+    return average;
+}
+
+Action* action_scaleToZeroThanDestroy(Ball* aBall) {
     return [Sequence actions:
             [Spawn actions:[ScaleTo actionWithDuration:0.3f scale:0.0f], [FadeTo actionWithDuration:0.3f opacity: 100], nil],
-            [CallFuncND actionWithTarget:gameModel selector:@selector(__destroy:ball:) data:aBall], nil];
+            action_destroy(aBall), nil];
+}
+
+Action* action_fadeOutThanDestroy(Ball* aBall) {
+    return [Sequence actions:
+            [FadeTo actionWithDuration:0.15f opacity:0.0f],
+            action_destroy(aBall), nil];
+}
+
+Action* action_inflateThanDestroy(Ball* aBall) {
+    return [Sequence actions:
+            [Spawn actions:[ScaleTo actionWithDuration:0.2f scale:2.0f],
+                           [FadeTo actionWithDuration:0.2f opacity:0.6f], nil],
+            action_destroy(aBall), nil];
+}
+
+Action* action_whiteBlinkThanDestroy(Ball* aBall) {
+    Sprite* sprite = (Sprite*)aBall.node;
+    sprite.texture = [[TextureMgr sharedTextureMgr] addImage:@"WhiteBall.png"];
+    return [Sequence actions:
+            [Blink actionWithDuration:0.2f blinks:5],
+            action_destroy(aBall), nil];
+}
+
+Action* action_destroy(Ball* aBall) {
+    return [CallFuncND actionWithTarget:gameModel() selector:@selector(__destroy:ball:) data:aBall];
 }

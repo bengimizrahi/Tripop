@@ -15,6 +15,7 @@
 @implementation Hexagrid
 
 @synthesize identifier, ball, neighbours, dirty, distance, position;
+@synthesize __ringDistance;
 
 - (id) init {
     if ((self = [super init])) {
@@ -66,6 +67,39 @@
     }
     [arr release];
     return [group autorelease];
+}
+
+- (NSArray*) ringsToLevel:(int)aLevel {
+    NSMutableArray* rings = [[NSMutableArray alloc] init];
+    for (int i = 0; i < aLevel; ++i) {
+        NSMutableArray* ring = [[NSMutableArray alloc] init];
+        [rings addObject:ring];
+        [ring release];
+    }
+    self.__ringDistance = 0;
+    self.dirty = YES;
+    NSMutableArray* arr = [[NSMutableArray alloc] initWithObjects:self, nil];
+    while ([arr count] > 0) {
+        Hexagrid* h = [arr objectAtIndex:0];
+        [arr removeObjectAtIndex:0];
+        if (h.__ringDistance < aLevel) {
+            [[rings objectAtIndex:h.__ringDistance] addObject:h];
+            for (Hexagrid* n in h.neighbours) {
+                if (![n isEqual:[NSNull null]] && !n.dirty) {
+                    n.__ringDistance = h.__ringDistance + 1;
+                    n.dirty = YES;
+                    [arr addObject:n];
+                }
+            }
+        }
+    }
+    [arr release];
+    for (NSArray* ring in rings) {
+        for (Hexagrid* h in ring) {
+            h.dirty = NO;
+        }
+    }
+    return [rings autorelease];
 }
 
 - (NSString*) description {

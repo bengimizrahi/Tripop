@@ -13,6 +13,4 @@
 @interface BackgroundLayer : Layer {
 }
 
-- (id) init;
-
 @end

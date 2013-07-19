@@ -29,7 +29,7 @@
 
 @implementation Hexamesh
 
-@synthesize level, center, rings, hexagrids;
+@synthesize level, center, hexagrids;
 
 - (void) __listRetainCounts {
     NSMutableString* str = [[NSMutableString alloc] init];
@@ -92,25 +92,6 @@
         Ball* ball = [[Ball alloc] initWithType:BallType_Core];
         center.ball = ball;
         [ball release];
-
-        rings = [[NSMutableArray alloc] init];
-        for (int lev = 1; lev <= level; ++lev) {
-            Hexagrid* cursor = center;
-            for (int i = 0; i < lev; ++i) {
-                cursor = [cursor.neighbours objectAtIndex:0];
-            }
-            int nb_idxes[6] = {4, 3, 2, 1, 0, 5};
-            NSMutableArray* ring = [[NSMutableArray alloc] init];
-            for (int i = 0; i < 6; ++i) {
-                int nb_idx = nb_idxes[i];
-                for (int j = 0; j < lev; ++j) {
-                    cursor = [cursor.neighbours objectAtIndex:nb_idx];
-                    [ring addObject:cursor];
-                }
-            }
-            [rings addObject:ring];
-            [ring release];
-        }
     }
     return self;
 }
@@ -129,7 +110,6 @@
         h.neighbours = nil;
     }
     [arr release];
-    [rings release];
     [hexagrids release];
     [center release];
     

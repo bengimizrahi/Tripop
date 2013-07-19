@@ -13,9 +13,10 @@
 @class Ball;
 @class Hexamesh;
 @class Level;
-//@class InfoLayer;
 @class HexameshLayer;
 @class SpaceLayer;
+@class InfoLayer;
+@class ScoresLayer;
 
 @interface GameModel : Layer {
     NSMutableArray* freeBalls;
@@ -25,24 +26,33 @@
     NSMutableArray* levels;
     Level* currentLevel;
 
-//  InfoLayer* infoLayer;
     SpaceLayer* spaceLayer;
     HexameshLayer* hexameshLayer;
+    InfoLayer* infoLayer;
+    ScoresLayer* scoresLayer;
 
-    NSInteger ballsJustDestroyed;
+    NSMutableArray* ballsJustDestroyed;
     CGFloat prevRotation;
+    
+    int score;
+    int hiScore;
 }
 
 @property (nonatomic, readonly) NSMutableArray* freeBalls;
 @property (nonatomic, readonly) NSMutableArray* attachedBalls;
 @property (nonatomic, readonly) Hexamesh* hexamesh;
-@property (nonatomic, readonly) NSMutableArray* levels;
+@property (nonatomic, readonly) Level* currentLevel;
 
 @property (nonatomic, readonly) SpaceLayer* spaceLayer;
 @property (nonatomic, readonly) HexameshLayer* hexameshLayer;
-//@property (nonatomic, readonly) InfoLayer* infoLayer;
+@property (nonatomic, readonly) InfoLayer* infoLayer;
+@property (nonatomic, readonly) ScoresLayer* scoresLayer;
 
 - (void) startGame;
+- (void) pauseGame;
+- (void) resumeGame;
 - (void) step:(CGFloat)dt;
+- (void) powerActionRequested;
+- (void) addPointsToScore:(int)aPoints;
 
 @end

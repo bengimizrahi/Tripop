@@ -1,5 +1,5 @@
 //
-//  GameLayer.h
+//  ScoresLayer.h
 //  Tripop
 //
 //  Created by Bengi Mizrahi on 9/27/09.
@@ -10,7 +10,9 @@
 
 #import <Foundation/Foundation.h>
 
-@interface SpaceLayer : Layer {
+@interface ScoresLayer : Layer {
 }
+
+- (void) addPoints:(int)aPoints animateAtPosition:(CGPoint)aPosition duration:(ccTime)aDuration scaleBy:(CGFloat)aScaleBy;
 
 @end

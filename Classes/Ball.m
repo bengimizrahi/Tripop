@@ -10,29 +10,35 @@
 
 #import "BallMoveStrategy.h"
 #import "Hexagrid.h"
+#import "Level.h"
+#import "GameModel.h"
 #import "common.h"
 #import "cocos2d.h"
 
 @implementation Ball
 
-@synthesize identifier, node, type, moveStrategy, hexagrid, isBeingDestroyed;
+@synthesize identifier, node;
+@synthesize points, power, type, moveStrategy, hexagrid, isBeingDestroyed;
 @dynamic position;
 @synthesize __verticalDist, __horizontalDist, __actualDist;
 
+- (id) init {
+    if ((self = [self initWithType:-1])) {
+    }
+    return self;
+}
+
 - (id) initWithType:(BallType)aType {
-    
     if ((self = [super init])) {
         static int nextId = 0;
         identifier = nextId++;
-        static NSString* imageFiles[] = {@"Core.png", @"RedBall.png", @"GreenBall.png", @"BlueBall.png", @"YellowBall.png"};
-        type = aType;
-        if (type == BallType_FireBall) {
-            node = [[ParticleSun alloc] init];
-        } else {
-            node = [[Sprite alloc] initWithFile:imageFiles[aType]];
-        }
         prevPosition = node.position;
         isBeingDestroyed = NO;
+        if (aType != -1) {
+            static NSString* imageFiles[] = {@"Core.png", @"RedBall.png", @"GreenBall.png", @"BlueBall.png", @"YellowBall.png", @"Dynamite.png", @"Lightning.png"};
+            type = aType;
+            node = [[Sprite alloc] initWithFile:imageFiles[aType]];
+        }
     }
     return self;
 }
@@ -68,6 +74,48 @@
     CGPoint p = node.position;
     prevPosition = p;
     node.position = pos;
+}
+
+- (void) applyActionsAfterConnectingTo:(Ball*)aAttachedBall {
+    [self applyActionsAfterCollapsingTerminates];
+}
+
+- (void) applyActionsAfterCollapsingTerminates {
+    NSArray* group = [hexagrid sameColorGroup];
+    if ([group count] >=3) {
+        for (Hexagrid* h in group) {
+            [h.ball.node runAction:action_scaleToZeroThanDestroy(h.ball)];
+            h.ball.isBeingDestroyed = YES;
+        }
+    }
+}
+
+- (NSArray*) randomPathToCore {
+    NSMutableArray* pathToCore = [[NSMutableArray alloc] init];
+    NSMutableArray* arr = [[NSMutableArray alloc] init];
+    Ball* b = self;
+    while (b.type != BallType_Core) {
+        [pathToCore addObject:b];
+        int minDistance = LEVEL+1;
+        for (Hexagrid* h in b.hexagrid.neighbours) {
+            if (![h isEqual:[NSNull null]] && h.ball) {
+                if (h.distance < minDistance) {
+                    minDistance = h.distance;
+                }
+            }
+        }
+        for (Hexagrid* h in b.hexagrid.neighbours) {
+            if (![h isEqual:[NSNull null]] && h.ball) {
+                if (h.distance == minDistance) {
+                    [arr addObject:h];
+                }
+            }
+        }
+        b = ((Hexagrid*)randomChoice(arr)).ball;
+        [arr removeAllObjects];
+    }
+    [arr release];
+    return [pathToCore autorelease];    
 }
 
 - (NSComparisonResult) compare:(Ball*)aBall {

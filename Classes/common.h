@@ -21,6 +21,9 @@
 
 CGPoint relPos6[6];
 
+@class Ball;
+@class GameModel;
+
 @interface RotatingLayer : Layer {
     CGFloat prevRotation;
 }
@@ -28,10 +31,18 @@ CGPoint relPos6[6];
 @end
 
 void initializeCommon();
+GameModel* gameModel();
 NSString* CGPointDescription(CGPoint p);
 CGFloat angleBetween(CGPoint p1, CGPoint p2);
 void pdis(CGPoint a, CGPoint b, CGPoint c, CGFloat dd, CGFloat* vd, CGFloat* hd, CGFloat* ad);
 NSMutableArray* shuffle(NSMutableArray* array);
+id randomChoice(NSArray* arr);
+NSArray* ballsIn(NSArray* hexagrids);
+CGPoint centerPosition(NSArray* aBalls);
 
-@class Ball;
-Action* action_scaleTheBallToZeroThanDestroyIt(Ball* aBall);
+Action* action_scaleToZeroThanDestroy(Ball* aBall);
+Action* action_fadeOutThanDestroy(Ball* aBall);
+Action* action_inflateThanDestroy(Ball* aBall);
+Action* action_whiteBlinkThanDestroy(Ball* aBall);
+Action* action_destroy(Ball* aBall);
+

@@ -18,18 +18,17 @@
     CGFloat ballSpeed;
     CGFloat createBallInterval;
     CGFloat createBallTimer;
-    
-    GameModel* gameModel;
 }
 
 @property (nonatomic, assign) BOOL expired;
-@property (nonatomic, assign) GameModel* gameModel;
 
 - (id) initWithBallTypes:(NSArray*)aBallTypes
                   repeat:(int)aRepeat
                ballSpeed:(CGFloat)aBallSpeed
       createBallInterval:(CGFloat)aCreateBallInterval;
 - (void) execute:(CGFloat)dt;
+- (void) ballsDestroyed:(NSArray*)aBalls;
+- (BOOL) powerActionRequested;
 - (NSString*) description;
 
 @end

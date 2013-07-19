@@ -12,14 +12,14 @@
 #import "Hexagrid.h"
 #import "Hexamesh.h"
 #import "GameModel.h"
+#import "TripopAppDelegate.h"
 
 @interface HexameshLayer(Private)
+- (CGPoint) __positionOnLayer:(UITouch*)aTouch;
 - (void) __touchMovedWithDelta:(CGFloat)dx;
 @end
 
 @implementation HexameshLayer
-
-@dynamic gameModel;
 
 - (id) init {
     if ((self = [super init])) {
@@ -30,6 +30,7 @@
         self.relativeAnchorPoint = YES;
         
         __x = 0;
+        __doubleClickState = DoubleClickState_None;
         lastStoredRotation = self.rotation;
     }
     return self;
@@ -40,9 +41,35 @@
     self.rotation = lastStoredRotation;
 }
 
+- (CGPoint) __positionOnLayer:(UITouch*)aTouch {
+    CGPoint p = [[Director sharedDirector] convertToGL:[aTouch locationInView:[aTouch view]]];
+    CGPoint r = ccpSub(p, self.position);
+    return r;
+}
+
 - (BOOL)ccTouchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
     UITouch* touch = [touches anyObject];
-    CGPoint p = [touch locationInView:[touch view]];
+    CGPoint p = [self __positionOnLayer:touch];
+    if (p.y > 150) {
+        [gameModel() powerActionRequested];
+    }
+    NSTimeInterval timestamp = [touch timestamp];
+    BOOL touchIsTooLate = (timestamp - __lastTouchBeganTimestamp > 0.2) ? YES : NO;
+    if (__doubleClickState == DoubleClickState_None) {
+        __doubleClickState = DoubleClickState_FirstTouchBegan;
+    } else if (__doubleClickState == DoubleClickState_FirstTouchBegan) {
+        NSAssert(NO, @"__doubleClickState == DoubleClickState_FirstTouchBegan");
+    } else if (__doubleClickState == DoubleClickState_FirstTouchEnded) {
+        if (!touchIsTooLate) {
+            __doubleClickState = DoubleClickState_SecondTouchBegan;
+        } else {
+            __doubleClickState = DoubleClickState_FirstTouchBegan;
+        }
+    } else if (__doubleClickState == DoubleClickState_SecondTouchBegan) {
+        NSAssert(NO, @"__doubleClickState == DoubleClickState_SecondTouchBegan");
+    }
+    __lastTouchBeganTimestamp = timestamp;
+    
     __x = p.x;
     __smoothTouch = YES;
     return kEventHandled;
@@ -50,7 +77,7 @@
 
 - (BOOL)ccTouchesMoved:(NSSet *)touches withEvent:(UIEvent *)event {
     UITouch* touch = [touches anyObject];
-    CGPoint p = [touch locationInView:[touch view]];
+    CGPoint p = [self __positionOnLayer:touch];
     CGFloat dx = p.x - __x;
     if (__smoothTouch) {
         dx /= 8;
@@ -62,6 +89,27 @@
 }
 
 - (BOOL)ccTouchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
+    UITouch* touch = [touches anyObject];
+    NSTimeInterval timestamp = [touch timestamp];
+    BOOL touchIsTooLate = (timestamp - __lastTouchBeganTimestamp > 0.2) ? YES : NO;
+    if (__doubleClickState == DoubleClickState_None) {
+        NSAssert(NO, @"__doubleClickState == DoubleClickState_None");
+    } else if (__doubleClickState == DoubleClickState_FirstTouchBegan) {
+        if (!touchIsTooLate) {
+            __doubleClickState = DoubleClickState_FirstTouchEnded;
+        } else {
+            __doubleClickState = DoubleClickState_None;
+        }
+    } else if (__doubleClickState == DoubleClickState_FirstTouchEnded) {
+        NSAssert(NO, @"__doubleClickState == DoubleClickState_FirstTouchEnded");
+    } else if (__doubleClickState == DoubleClickState_SecondTouchBegan) {
+        if (!touchIsTooLate) {
+            //[gameModel() pauseGame];
+        }
+        __doubleClickState = DoubleClickState_None;   
+    }
+    __lastTouchBeganTimestamp = timestamp;
+    
     return [self ccTouchesMoved:touches withEvent:event];
 }
 
@@ -71,14 +119,6 @@
 
 - (void) __touchMovedWithDelta:(CGFloat)dx {
     lastStoredRotation = lastStoredRotation + 180.0f/GAME_AREA_RADIUS*dx*TOUCH_SENSITIVITY;
-}
-
-- (GameModel*) gameModel {
-    return nil;
-}
-
-- (void) setGameModel:(GameModel*)aGameModel {
-    [self addChild:aGameModel.hexamesh.center.ball.node];
 }
 
 @end
