@@ -1,12 +1,20 @@
 from os import listdir
+import math
 
 GAME_AREA_RADIUS = 160
 BALL_RADIUS = 10
 INITIAL_BALL_DISTANCE = 100
 INITIAL_BALL_SPEED = 40
-
+LEVEL = 8
 BALL_TYPE_CORE, BALL_TYPE_RED, BALL_TYPE_YELLOW, BALL_TYPE_GREEN, BALL_TYPE_BLUE = range(5)
-
+RELPOS = [
+    (2*BALL_RADIUS*math.cos(math.pi/6), 2*BALL_RADIUS*math.sin(math.pi/6)),
+    (0, 2*BALL_RADIUS),
+    (2*BALL_RADIUS*math.cos(5*math.pi/6), 2*BALL_RADIUS*math.sin(5*math.pi/6)),
+    (2*BALL_RADIUS*math.cos(7*math.pi/6), 2*BALL_RADIUS*math.sin(7*math.pi/6)),
+    (0, -2*BALL_RADIUS),
+    (2*BALL_RADIUS*math.cos(11*math.pi/6), 2*BALL_RADIUS*math.sin(11*math.pi/6))
+]
 IMAGES_DIR = 'Images/'
 
 def imageForBallType(type):

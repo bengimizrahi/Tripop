@@ -1,6 +1,8 @@
 from common import *
 from Ball import *
 
+import sys
+
 class Hexagrid:
 
     idGenerator = IdGenerator()
@@ -8,13 +10,14 @@ class Hexagrid:
     def __init__(self):
         self.neighbours = [None]*6
         self.ball = None
-	self.dirty = False
+        self.dirty = False
         self.id = Hexagrid.idGenerator.next()
 
     def setBall(self, ball):
         self.ball = ball 
-        if ball != None:
-            ball.hexagrid = self 
+        if self.ball != None:
+            self.ball.position = self.position
+            self.ball.hexagrid = self 
 
     def sameColorGroup(self):
         assert self.ball != None
@@ -25,7 +28,7 @@ class Hexagrid:
         while len(arr) > 0:
             h = arr.pop()
             for n in h.neighbours:
-                if n.ball != None and n.ball.type == self.ball.type and n.dirty != True:
+                if n != None and n.ball != None and n.ball.type == self.ball.type and n.dirty != True:
                     arr.append(n)
                     group.append(n)
                     n.dirty = True
@@ -83,7 +86,20 @@ class Hexamesh:
                 arr.append(level-i)
             for i in xrange(len(arrayx)):
                 arrayx[i].distance = arr[i]
-
+		
+        def setPositions():
+            self.center.position = (0, 0)
+            arr = [self.center]
+            while len(arr) > 0:
+                h = arr.pop()
+                x, y = h.position
+                for nb_idx in xrange(len(h.neighbours)):
+                    n = h.neighbours[nb_idx]
+                    if n != None and not hasattr(n, 'position'):
+                        dx, dy = RELPOS[nb_idx]
+                        n.position = x+dx, y+dy
+                        arr.append(n)
+            
         arrayy = []
         last_arrayx = None
         for i in xrange(level+1, 2*(level+1)):
@@ -107,6 +123,7 @@ class Hexamesh:
         for i in xrange(level):
             h = h.neighbours[0]
         self.center = h
+        setPositions()
         self.center.setBall(Ball(0, 0, 0, BALL_TYPE_CORE))
 
 def test_buildHexagrid(level):
