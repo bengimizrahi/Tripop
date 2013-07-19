@@ -6,18 +6,23 @@
 //  Copyright 2009 __MyCompanyName__. All rights reserved.
 //
 
-#import "cocos2d.h"
+#import "common.h"
 
 #import <Foundation/Foundation.h>
 
 @class GameModel;
 
-@interface HexameshLayer : Layer {
+@interface HexameshLayer : RotatingLayer {
+    CGFloat lastStoredRotation;
     
+    CGFloat __x;
+    BOOL __smoothTouch;
 }
 
 @property (nonatomic, assign) GameModel* gameModel;
 
 - (id) init;
+
+- (void) updateRotation;
 
 @end

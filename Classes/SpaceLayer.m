@@ -16,7 +16,7 @@
 - (id) init {
     if ((self = [super init])) {        
         CGSize s = [[Director sharedDirector] winSize];
-        self.position = ccp(s.width/2, s.height/2);
+        self.position = ccp(s.width/2, s.height/2 + 45.0f);
     }
     return self;
 }

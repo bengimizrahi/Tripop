@@ -23,7 +23,7 @@
 }
 
 - (void) moveByDeltaTime:(CGFloat)dt {
-    NSAssert(YES, @"Execution should not get here.");
+    NSAssert(NO, @"override");
 }
 
 @end
@@ -44,7 +44,7 @@
 }
 
 - (void) moveByDeltaTime:(CGFloat)dt {
-    ball.sprite.position = ccpAdd(ball.sprite.position, ccpMult(velocity, dt));
+    ball.position = ccpAdd(ball.position, ccpMult(velocity, dt));
 }
 
 @end

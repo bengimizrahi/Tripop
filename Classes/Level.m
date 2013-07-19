@@ -10,6 +10,7 @@
 
 #import "BallMoveStrategy.h"
 #import "Ball.h"
+#import "SpaceLayer.h"
 #import "GameModel.h"
 #import "common.h"
 #import "cocos2d.h"
@@ -51,7 +52,8 @@
         if (ballsLeft == 0) {
             expired = YES;
         }
-        [gameModel addFreeBall:ball];
+        [gameModel.freeBalls addObject:ball];
+        [gameModel.spaceLayer addChild:ball.sprite];
         [ball release];
     }
 }

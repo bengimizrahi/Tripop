@@ -111,7 +111,7 @@
             [rings addObject:ring];
             [ring release];
         }
-    }   
+    }
     return self;
 }
 

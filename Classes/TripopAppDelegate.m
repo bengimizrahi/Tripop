@@ -9,9 +9,11 @@
 #import "TripopAppDelegate.h"
 
 //#import "InfoLayer.h"
+#import "ForegroundLayer.h"
 #import "HexameshLayer.h"
 #import "SpaceLayer.h"
 #import "GameModel.h"
+#import "BackgroundLayer.h"
 #import "common.h"
 #import "cocos2d.h"
                     
@@ -26,7 +28,7 @@
 	
 	// cocos2d will inherit these values
 	[window setUserInteractionEnabled:YES];	
-	[window setMultipleTouchEnabled:YES];
+	[window setMultipleTouchEnabled:NO];
 	
 	// must be called before any othe call to the director
 	// WARNING: FastDirector doesn't interact well with UIKit controls
@@ -48,11 +50,14 @@
 	
 	initializeCommon();
     Scene* scene = [Scene node];
+    [scene addChild:[BackgroundLayer node]];
     GameModel* gameModel = [GameModel node];
     [scene addChild:gameModel];
     [scene addChild:gameModel.spaceLayer];
     [scene addChild:gameModel.hexameshLayer];
-//  [scene addChild:gameModel.infoLayer];
+    [scene addChild:[ForegroundLayer node]];
+    //  [scene addChild:gameModel.infoLayer];
+    
     [gameModel startGame];
 	[[Director sharedDirector] runWithScene: scene];
 }

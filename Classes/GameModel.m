@@ -63,7 +63,7 @@
     levels = [[NSMutableArray alloc] init];
     
     NSArray* ballTypeList = [self __convertToNSArray:ballTypes count:4];
-    Level* level1 = [[Level alloc] initWithBallTypes:ballTypeList repeat:30 ballSpeed:70 createBallInterval:1.0f];
+    Level* level1 = [[Level alloc] initWithBallTypes:ballTypeList repeat:130 ballSpeed:70 createBallInterval:1.0f];
     [levels addObject:level1];
     
     currentLevel = [levels objectAtIndex:0];
@@ -80,24 +80,33 @@
 
 - (void) step:(CGFloat)dt {
     if (dt == 0.0f) {
-        CCLOG(@"dt == 0.0f, do nothing");
+        CCLOG(@"dt = 0.0f, do nothing");
         return;
+    } else {
+        CCLOG(@"dt = %.2f", dt);
     }
+    [hexameshLayer updateRotation];
+    
     NSMutableArray* toBeRemovedFromFreeBalls = [[NSMutableArray alloc] init];
     for (Ball* freeBall in freeBalls) {
         [freeBall moveByDeltaTime:dt];
         CGPoint collidePosition;
         Ball* attachedBall = nil;
         if ((attachedBall = [self __checkCollisionForBall:freeBall collidePosition:&collidePosition])) {
-            if (attachedBall.hexagrid.distance == LEVEL) {
-                [self endGame];
-            }
-            [toBeRemovedFromFreeBalls addObject:freeBall];
-            [spaceLayer removeChild:freeBall.sprite cleanup:YES];
-            freeBall.position = collidePosition;
-            if ([self __connectAttachedBall:attachedBall withFreeBall:freeBall]) {
-                [attachedBalls addObject:freeBall];
-                [hexameshLayer addChild:freeBall.sprite];
+            if (freeBall.ballAction) {
+                // apply ball action
+            } else {
+                if (attachedBall.hexagrid.distance == LEVEL) {
+                    [self endGame];
+                }
+                [toBeRemovedFromFreeBalls addObject:freeBall];
+                [spaceLayer removeChild:freeBall.sprite cleanup:YES];
+                freeBall.position = collidePosition;
+                if ([self __connectAttachedBall:attachedBall withFreeBall:freeBall]) {
+                    [attachedBalls addObject:freeBall];
+                    [hexameshLayer addChild:freeBall.sprite];
+                    NSArray* group = [freeBall.hexagrid sameColorGroup];
+                }
             }
         }
     }
@@ -116,13 +125,51 @@
 }
 
 - (Ball*) __checkCollisionForBall:(Ball*)aBall collidePosition:(CGPoint*)aCollidePosition {
-    for (Ball* ball in attachedBalls) {
-        if (ccpLengthSQ(ccpSub(ball.position, aBall.position)) < BR_SQ) {
-            *aCollidePosition = aBall.position;
-            return ball;
+    CGPoint pos = [aBall positionOnLayer:hexameshLayer];
+    CGPoint prevPos = [aBall prevPositionOnLayer:hexameshLayer];
+    CGFloat d = ccpDistance(pos, prevPos);
+    
+    Ball* candidateBall = nil;
+    for (Ball* attBall in attachedBalls) {
+        CCLOG(@"Checking attBall=%@ for collision with freeBall=%@", attBall, aBall);
+        CGFloat vd, hd, ad; {
+            pdis(pos, prevPos, attBall.position, d, &vd, &hd, &ad);
+            attBall.__actualDist = ad;
+            CCLOG(@"d, vd, hd, ad = %.2f, %.2f, %.2f, %.2f", d, vd, hd, ad);
         }
+        if (attBall.__actualDist != FLT_MAX) {
+            CCLOG(@"ad=%.2f", ad);
+            if (candidateBall == nil || ad < candidateBall.__actualDist) {
+                if (candidateBall) {
+                    CCLOG(@"ad(%.2f) < candidateBall.__actualDist(%.2f)", ad, candidateBall.__actualDist);
+                } else {
+                    CCLOG(@"candidateBall == nil");
+                }
+                if (d > ad) {
+                    CCLOG(@"d(%.2f) > ad(%.2f)", d, ad);
+                    CCLOG(@"new candidate ball: %@", attBall);
+                    candidateBall = attBall;
+                } else {
+                    CCLOG(@"dd(%.2f) <= ad(%.2f)", d, ad);
+                    CCLOG(@"candidate ball is still: %@", candidateBall);
+                }
+            } else {
+                CCLOG(@"ad >= candidateBall.__actualDist(%.2f). Skipping attBall(%s)", candidateBall.__actualDist, attBall);
+            }
+        } else {
+            CCLOG(@"attBall.__actualDist is FLT_MAX");
+        }
+        CCLOG(@"\n---next candidate---");
     }
-    return nil;
+    CCLOG(@"Final candidate ball: %@", candidateBall);
+    CCLOG(@"");
+    if (candidateBall) {
+        NSAssert1(candidateBall.__actualDist != FLT_MAX, @"%@.__actualDist=FLT_MAX", candidateBall);
+        *aCollidePosition = ccpMult(ccpAdd(ccpMult(ccpSub(pos, prevPos), candidateBall.__actualDist), ccpMult(prevPos, d)), 1.0f/d);
+    } else {
+        CCLOG(@"final position becomes(aCollidePosition): %@", CGPointDescription(*aCollidePosition));
+    }
+    return candidateBall;
 }
 
 - (BOOL) __connectAttachedBall:(Ball*)aAttachedBall withFreeBall:(Ball*)aFreeBall {
@@ -142,7 +189,7 @@
         NSAssert(NO, errStr);
     }
     Hexagrid* nb_hexagrid = [aAttachedBall.hexagrid.neighbours objectAtIndex:nb_idx];
-    // NSAssert (nb_hexagrid.ball == None, @"Can't connect, there is a ball %@ in %@", nb_hexagrid.ball, nb_hexagrid);
+    //NSAssert (nb_hexagrid.ball == None, @"Can't connect, there is a ball %@ in %@", nb_hexagrid.ball, nb_hexagrid);
     if (nb_hexagrid.ball) {
         [aFreeBall moveByDeltaTime:-1.0f];
         return NO;

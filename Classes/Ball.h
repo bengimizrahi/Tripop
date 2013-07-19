@@ -16,9 +16,10 @@ typedef enum {
     BallType_Yellow,
 } BallType;
 
-@class Sprite;
 @class BallMoveStrategy;
 @class Hexagrid;
+@class Sprite;
+@class RotatingLayer;
 
 @interface Ball : NSObject {
     int identifier;
@@ -27,11 +28,12 @@ typedef enum {
     BallType type;
     BallMoveStrategy* moveStrategy;
     Hexagrid* hexagrid;
-    BOOL goingToPop;
-
-    float __verticalDist;
-    float __horizontalDist;
-    float __actualDist;
+    BOOL isBeingDestroyed;
+    
+    CGPoint prevPosition;
+    CGFloat __verticalDist;
+    CGFloat __horizontalDist;
+    CGFloat __actualDist;
 }
 
 @property (nonatomic, readonly) int identifier;
@@ -40,12 +42,19 @@ typedef enum {
 @property (nonatomic, readonly) BallType type;
 @property (nonatomic, retain) BallMoveStrategy* moveStrategy;
 @property (nonatomic, retain) Hexagrid* hexagrid;
-@property (nonatomic, assign) BOOL goingToPop;
+@property (nonatomic, assign) BOOL isBeingDestroyed;
+
 @property (nonatomic) CGPoint position;
+
+@property (nonatomic, assign) CGFloat __verticalDist;
+@property (nonatomic, assign) CGFloat __horizontalDist;
+@property (nonatomic, assign) CGFloat __actualDist;
 
 - (id) initWithType:(BallType)aType;
 
 - (void) moveByDeltaTime:(CGFloat)dt;
+- (CGPoint) positionOnLayer:(RotatingLayer*)aLayer;
+- (CGPoint) prevPositionOnLayer:(RotatingLayer*)aLayer;
 
 - (NSString*) description;
 

@@ -27,6 +27,8 @@
 @property (nonatomic, assign) int distance;
 @property (nonatomic, assign) CGPoint position;
 
+- (NSArray*) sameColorGroup;
+
 - (NSString*) description;
 
 @end
