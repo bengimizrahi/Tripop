@@ -1,0 +1,10 @@
+jump 2
+insert BLUE
+jump 0
+insert BLUE
+jump 1
+insert RED
+jump 5
+insert YELLOW
+jump 5
+insert GREEN

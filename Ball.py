@@ -20,9 +20,13 @@ class Ball(object):
         self.type = type
         self.velocity = Vector2(-x, -y).normalize()*speed
         self.hexagrid = None
+        self.goingToPop = False
         
     def __repr__(self):
-        return "<Ball-%d>" % (self.id)
+        dstr = ""
+        if self.hexagrid and self.hexagrid.dirty: dstr = "/D"
+        if self.hexagrid != None: return "<B:%d-H%d%s-T%d>" % (self.id, self.hexagrid.id, dstr, self.type)
+        else: return "<B:%d----T%d>" % (self.id, self.type)
 
     @property
     def position(self):

@@ -1,0 +1,27 @@
+jump 0
+insert RED
+jump 0
+insert RED
+jump 3
+jump 3
+
+jump 1
+insert BLUE
+jump 1
+insert BLUE
+jump 4
+jump 4
+
+jump 2
+insert GREEN
+jump 2
+insert GREEN
+jump 5
+jump 5
+
+jump 3
+insert YELLOW
+jump 3
+insert YELLOW
+jump 0
+jump 0

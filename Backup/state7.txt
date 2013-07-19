@@ -1,0 +1,77 @@
+#
+#                       .
+#                    .     .
+#                 .     .     .
+#              .     .     .     .
+#           .     .     .     .     .
+#        .     .     .     .     .     Y
+#     .     .     .     .     .     B     Y
+#        .     .     .     .     R     B
+#     .     .     .     .     G     R     .
+#        .     .     .     Y     G     .
+#     .     .     .     B     Y     .     .
+#        .     .     B     .     .     .
+#     .     .     .     0     .     .     .
+#        .     .     .     B     Y     .
+#     .     .     .     B     Y     G     .
+#        .     .     .     .     G     R
+#     .     .     .     .     .     R     B
+#        .     .     .     .     .     B     Y
+#     .     .     .     .     .     .     Y
+#        .     .     .     .     .     .
+#           .     .     .     .     .
+#              .     .     .     .
+#                 .     .     .
+#                    .     .
+#
+#
+
+jump 2
+insert BLUE 
+jump 0
+insert BLUE YELLOW GREEN RED BLUE YELLOW
+
+jump 5
+insert YELLOW
+jump 3
+insert BLUE RED GREEN YELLOW
+
+jump 4
+jump 5
+insert YELLOW GREEN RED BLUE YELLOW
+
+jump 3
+insert YELLOW
+jump 2
+insert BLUE RED GREEN YELLOW BLUE
+
+jump 3
+insert BLUE
+
+#                       .
+#                    .     .
+#                 .     .     .
+#              .     .     .     .
+#           .     .     .     .     .
+#        .     .     .     .     .     Y
+#     .     .     .     .     .     B     Y
+#        .     .     .     .     R     B
+#     .     .     .     .     G     R     .
+#        .     .     .     Y     G     .
+#     .     .     .     B     Y     .     .
+#        .     .     B     .     .     .
+#     .     .     .     0     .     .     .
+#        .     .     .     B     Y     .
+#     .     .     .     B     Y     G     .
+#        .     .     .     .     G     R
+#     .     .     .     .     .     R     B
+#        .     .     .     .     .     B     Y
+#     .     .     .     .     .     .     Y
+#        .     .     .     .     .     .
+#           .     .     .     .     .
+#              .     .     .     .
+#                 .     .     .
+#                    .     .
+#
+#
+

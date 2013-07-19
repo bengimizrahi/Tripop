@@ -14,8 +14,12 @@ class Hexagrid:
         self.id = Hexagrid.idGenerator.next()
 
     def setBall(self, ball):
-        self.ball = ball 
-        if self.ball != None:
+        if self.ball != None and self.ball != ball:
+            self.ball.hexagrid = None
+        if ball == None:
+            self.ball = None
+        else:
+            self.ball = ball
             self.ball.position = self.position
             self.ball.hexagrid = self 
 
@@ -28,7 +32,10 @@ class Hexagrid:
         while len(arr) > 0:
             h = arr.pop()
             for n in h.neighbours:
-                if n != None and n.ball != None and n.ball.type == self.ball.type and n.dirty != True:
+                if (n != None and n.ball != None and
+                                 n.ball.goingToPop == False and 
+                                 n.ball.type == self.ball.type and
+                                 n.dirty != True):
                     arr.append(n)
                     group.append(n)
                     n.dirty = True
@@ -37,7 +44,10 @@ class Hexagrid:
         return group
     
     def __repr__(self):
-        return "[H:%d]" % self.id
+        dstr = ""
+        if self.dirty: dstr = "/D"
+        if self.ball: return "[H:%d-B%d%s]" % (self.id, self.ball.id, dstr)
+        else: return "[H:%d---%s]" % (self.id, dstr)
 
 class Hexamesh:
 
@@ -96,7 +106,7 @@ class Hexamesh:
                 for nb_idx in xrange(len(h.neighbours)):
                     n = h.neighbours[nb_idx]
                     if n != None and not hasattr(n, 'position'):
-                        dx, dy = RELPOS[nb_idx]
+                        dx, dy = RELPOS6[nb_idx]
                         n.position = x+dx, y+dy
                         arr.append(n)
             
