@@ -8,13 +8,27 @@ class Hexagrid:
     def __init__(self):
         self.neighbours = [None]*6
         self.ball = None
+	self.dirty = False
         self.id = Hexagrid.idGenerator.next()
 
     def setBall(self, ball):
         self.ball = ball 
         if ball != None:
             ball.hexagrid = self 
-
+    
+    def numSameBalls(self):
+	assert self.ball != None
+	self.dirty = True
+	arr = [self]
+	num = 1
+	while True:
+	    h = arr.pop()
+	    for h in self.neighbours:
+		if h.ball != None and h.ball.type == self.ball.type and h.dirty != True:
+		    arr.append(h)
+		    h.dirty = True
+		    num += 1
+    
     def __repr__(self):
         return "[H:%d]" % self.id
 

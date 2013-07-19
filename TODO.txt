@@ -1,2 +1,4 @@
 - on_mouse_drag, just save the current rotate value in a temporary variable
 - the layer's rotate value must be updated at step()
+
+* remove relCoordSystem from Ball's member variables, make it an argument to position(layer). If layer != None, calculate x,y according to layer.
