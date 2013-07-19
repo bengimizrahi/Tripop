@@ -1,0 +1,4 @@
+- after connection:
+    - do depth-first search and mark all the same colors
+    - if number > k, recursively destroy all the same colors
+    - DO NOT move the free balls (leave it for version7)

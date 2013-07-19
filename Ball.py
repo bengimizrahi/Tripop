@@ -20,8 +20,6 @@ class Ball(object):
         self.type = type
         self.velocity = Vector2(-x, -y).normalize()*speed
         self.hexagrid = None
-        #l = Label(str(self.id), (-5, -5))
-        #self.sprite.add(l)
         
     def __repr__(self):
         return "<Ball-%d>" % (self.id)
@@ -46,11 +44,6 @@ class Ball(object):
         nx, ny = math.cos(angle)*x - math.sin(angle)*y, math.sin(angle)*x + math.cos(angle)*y
         self.sprite.position = nx, ny
         
-    def distance(self, ball):
-        x1, y1 = self.position
-        x2, y2 = ball.position
-        return math.sqrt((x1-x2)**2 + (y1-y2)**2)
-
     def move(self, dt):
         x, y = self.position
         self.position = x+(self.velocity.x*dt), y+(self.velocity.y*dt)

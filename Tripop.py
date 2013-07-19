@@ -96,8 +96,6 @@ class GameLayer(Layer):
             angle = angleBetween((x1, y1), (x2, y2))
             x, y = x2-x1, y2-y1
             nb_idx = -1
-            print "x, y = ", (x, y)
-            print "angle = ", angle
             if x > 0 and y >= 0 and 0 <= angle < math.pi/3:
                 nb_idx = 0
                 x2 = 2*BALL_RADIUS*math.cos(math.pi/6)+x1
@@ -124,19 +122,20 @@ class GameLayer(Layer):
                 y2 = 2*BALL_RADIUS*math.sin(11*math.pi/6)+y1
             else:
                 assert False, "connect error"
-            self.info.element.text = "nb_idx = %s" % str(nb_idx)
-            print "connected from ", nb_idx
-            print "free ball's new position is ", (x2, y2)
             freeBall.position = x2, y2
             nb_hexagrid = attachedBall.hexagrid.neighbours[nb_idx]
             if nb_hexagrid == None:
                 print "GAME OVER :))))"
                 return
             nb_hexagrid.setBall(freeBall)
-            freeBall.hexagrid = nb_hexagrid
             freeBall.velocity *= 0
             freeBall.sprite.stop()
-            
+        
+        def pop(group):
+            for h in group:
+                self.hexameshLayer.removeBall(h.ball)
+                h.setBall(None)
+        
         justAttachedBalls = []
         for aFreeBall in self.freeBalls:
             aFreeBall.move(dt)
@@ -146,6 +145,9 @@ class GameLayer(Layer):
                     justAttachedBalls.append(aFreeBall)
                     self.removeBall(aFreeBall)
                     self.hexameshLayer.addBall(aFreeBall)
+                    group = aFreeBall.hexagrid.sameColorGroup()
+                    if len(group) >= 3:
+                        pop(group)
                     break
         for ball in justAttachedBalls:
             if ball in self.freeBalls: self.freeBalls.remove(ball)
