@@ -27,7 +27,7 @@
 
 CGPoint relPos6[6];
 int nextBallId;
-int nextHexagridId;
+int nextGridId;
 int hiscore;
 
 @class Ball;
@@ -46,7 +46,7 @@ void pdis(CGPoint a, CGPoint b, CGPoint c, CGFloat dd, CGFloat* vd, CGFloat* hd,
 NSMutableArray* shuffle(NSMutableArray* array);
 NSMutableArray* convertToNSArray(BallType* arr, NSInteger n);
 id randomChoice(NSArray* arr);
-NSArray* ballsIn(NSArray* hexagrids);
+NSArray* ballsIn(NSArray* grids);
 CGPoint centerPosition(NSArray* aBalls, CGFloat rotation);
 NSString* int2str(int v);
 NSString* float2str(CGFloat v);

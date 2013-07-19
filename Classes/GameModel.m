@@ -12,7 +12,7 @@
 #import "Dynamite.h"
 #import "Lightning.h"
 #import "Ball.h"
-#import "Hexagrid.h"
+#import "Grid.h"
 #import "Hexamesh.h"
 #import "PowerBar.h"
 #import "SpaceLayer.h"
@@ -132,10 +132,10 @@
                 nextBallId = MAX(nextBallId, b.identifier);
             }
         }
-        for (Hexagrid* h in hexamesh.hexagrids) {
-            nextHexagridId = MAX(nextHexagridId, h.identifier);
+        for (Grid* h in hexamesh.grids) {
+            nextGridId = MAX(nextGridId, h.identifier);
         }
-        nextHexagridId++;
+        nextGridId++;
         [self __collapseUnconnectedBalls];
     }
     return self;
@@ -257,7 +257,7 @@
             if ([self __connectAttachedBall:attachedBall withFreeBall:freeBall]) {
                 [attachedBalls addObject:freeBall];
                 [hexameshLayer addChild:freeBall.node];
-                if (freeBall.hexagrid.distance > LEVEL && 1 <= freeBall.type && freeBall.type <= 4) {
+                if (freeBall.grid.distance > LEVEL && 1 <= freeBall.type && freeBall.type <= 4) {
                     [self endGame];
                     [freeBall.node runAction:[RepeatForever actionWithAction:[Blink actionWithDuration:0.5f blinks:1]]];
                     return;
@@ -363,13 +363,13 @@
         NSString* errStr = [NSString stringWithFormat:@"connect error %@ angle=%.2f", CGPointDescription(p), angle];
         NSAssert(NO, errStr);
     }
-    Hexagrid* nb_hexagrid = [aAttachedBall.hexagrid.neighbours objectAtIndex:nb_idx];
-    //NSAssert (nb_hexagrid.ball == None, @"Can't connect, there is a ball %@ in %@", nb_hexagrid.ball, nb_hexagrid);
-    if (nb_hexagrid.ball) {
+    Grid* nb_grid = [aAttachedBall.grid.neighbours objectAtIndex:nb_idx];
+    //NSAssert (nb_grid.ball == None, @"Can't connect, there is a ball %@ in %@", nb_grid.ball, nb_grid);
+    if (nb_grid.ball) {
         [aFreeBall moveByDeltaTime:-1.0f];
         return NO;
     }
-    nb_hexagrid.ball = aFreeBall;
+    nb_grid.ball = aFreeBall;
     aFreeBall.moveStrategy = nil;
     return YES;
 }
@@ -386,9 +386,9 @@
     NSMutableArray* connectedGrids = [[NSMutableArray alloc] initWithObjects:hexamesh.center, nil];
     hexamesh.center.dirty = YES;
     while ([arr count] > 0) {
-        Hexagrid* h = [arr lastObject];
+        Grid* h = [arr lastObject];
         [arr removeLastObject];
-        for (Hexagrid* n in h.neighbours) {
+        for (Grid* n in h.neighbours) {
             if (![n isOutOfGameArea] && n.ball && !n.dirty) {
                 [arr addObject:n];
                 [connectedGrids addObject:n];
@@ -397,7 +397,7 @@
         }
     }
     NSMutableArray* temporaryArray = [[NSMutableArray alloc] init];
-    for (Hexagrid* h in connectedGrids) {
+    for (Grid* h in connectedGrids) {
         [temporaryArray addObject:h.ball];
         h.dirty = NO;
     }
@@ -427,7 +427,8 @@
         }
         [collapsingBalls removeObject:b];
         BOOL touchesToAtLeastOneConnectedBall = NO;
-        for (Hexagrid* n in b.hexagrid.neighbours) {
+        NSAssert(b.grid, @"b.grid is nil");
+        for (Grid* n in b.grid.neighbours) {
             if (![n isOutOfGameArea] && n.ball && [connectedBalls member:n.ball]) {
                 touchesToAtLeastOneConnectedBall = YES;
             }
@@ -435,8 +436,8 @@
         if (touchesToAtLeastOneConnectedBall) {
             [connectedBalls addObject:b];
         } else {
-            Hexagrid* closestGrid = nil;
-            for (Hexagrid* n in b.hexagrid.neighbours) {
+            Grid* closestGrid = nil;
+            for (Grid* n in b.grid.neighbours) {
                 if (![n isOutOfGameArea]) {
                     if (!closestGrid) {
                         closestGrid = n;
@@ -448,7 +449,7 @@
                 }
             }
             if (!closestGrid.ball) {
-                Hexagrid* oldH = b.hexagrid;
+                Grid* oldH = b.grid;
                 oldH.ball = nil;
                 closestGrid.ball = b;                
             }

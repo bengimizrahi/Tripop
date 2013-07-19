@@ -8,20 +8,20 @@
 
 #import <Foundation/Foundation.h>
 
-@class Hexagrid;
+@class Grid;
 @class GameModel;
 
 @interface Hexamesh : NSObject<NSCoding> {
     int level;
-    Hexagrid* center;
-    NSMutableArray* hexagrids;
+    Grid* center;
+    NSMutableArray* grids;
     
     GameModel* gameModel;
 }
 
 @property (nonatomic, readonly) int level;
-@property (nonatomic, readonly) Hexagrid* center;
-@property (nonatomic, readonly) NSMutableArray* hexagrids;
+@property (nonatomic, readonly) Grid* center;
+@property (nonatomic, readonly) NSMutableArray* grids;
 
 - (id) initWithLevel:(int)aLevel gameModel:(GameModel*)aGameModel;
 - (id) initWithLevel:(int)aLevel file:(NSString*)aFile gameModel:(GameModel*)aGameModel;

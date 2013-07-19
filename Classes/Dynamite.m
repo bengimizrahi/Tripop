@@ -7,7 +7,7 @@
 //
 
 #import "Ball.h"
-#import "Hexagrid.h"
+#import "Grid.h"
 #import "Dynamite.h"
 #import "common.h"
 #import "cocos2d.h"
@@ -40,7 +40,7 @@
     // removed -> [gameModel.ballsJustDestroyed addObject:self];
     [gameModel.attachedBalls removeObject:self];
     [gameModel.hexameshLayer removeChild:self.node cleanup:YES];
-    self.hexagrid.ball = nil;
+    self.grid.ball = nil;
 }
 
 - (void) pauseActions {
@@ -55,11 +55,11 @@
 
 - (void) applyActionsAfterConnectingTo:(Ball*)aAttachedBall {
     [delegate playExplosionWithDelay:0.2f];
-    Hexagrid* h = aAttachedBall.hexagrid;
+    Grid* h = aAttachedBall.grid;
     NSArray* rings = [h ringsToLevel:inpectLevel];
     for (int i = 0; i < [rings count]; ++i) {
         NSArray* ring = [rings objectAtIndex:i];
-        for (Hexagrid* rh in ring) {
+        for (Grid* rh in ring) {
             if (rh.ball.type != BallType_Core && rh.ball != self) {
                 rh.ball.power = 0.0f;
                 rh.ball.isBeingDestroyed = YES;

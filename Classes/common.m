@@ -8,7 +8,7 @@
  */
 
 #include "Ball.h"
-#include "Hexagrid.h"
+#include "Grid.h"
 #include "HexameshLayer.h"
 #include "GameModel.h"
 #include "TripopAppDelegate.h"
@@ -35,7 +35,7 @@ void initializeCommon() {
     relPos6[5] = ccp(2 * BR * cosf(11 * M_PI_6), 2 * BR * sinf(11 * M_PI_6));
 
     nextBallId = 0;
-    nextHexagridId = 0;
+    nextGridId = 0;
 
     hiscore = 0;
     NSString* str = [[NSUserDefaults standardUserDefaults] objectForKey:@"hiscore"];
@@ -108,9 +108,9 @@ id randomChoice(NSArray* arr) {
     return [arr objectAtIndex:(int)(CCRANDOM_0_1() * [arr count])];
 }
 
-NSArray* ballsIn(NSArray* hexagrids) {
+NSArray* ballsIn(NSArray* grids) {
     NSMutableArray* arr = [[NSMutableArray alloc] init];
-    for (Hexagrid* h in hexagrids) {
+    for (Grid* h in grids) {
         [arr addObject:h.ball];
     }
     return [arr autorelease];

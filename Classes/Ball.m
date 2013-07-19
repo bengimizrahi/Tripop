@@ -9,7 +9,7 @@
 #import "Ball.h"
 
 #import "BallMoveStrategy.h"
-#import "Hexagrid.h"
+#import "Grid.h"
 #import "Hexamesh.h"
 #import "GameModel.h"
 #import "common.h"
@@ -21,7 +21,7 @@ static NSString* imageFiles[] = {@"Core.png", @"RedBall.png", @"GreenBall.png", 
 @implementation Ball
 
 @synthesize identifier, node;
-@synthesize points, power, type, moveStrategy, hexagrid, isBeingDestroyed;
+@synthesize points, power, type, moveStrategy, grid, isBeingDestroyed;
 @synthesize gameModel;
 @dynamic position;
 @synthesize __verticalDist, __horizontalDist, __actualDist;
@@ -61,7 +61,7 @@ static NSString* imageFiles[] = {@"Core.png", @"RedBall.png", @"GreenBall.png", 
     [aCoder encodeInt:power forKey:@"power"];
     [aCoder encodeInt:type forKey:@"type"];
     [aCoder encodeObject:moveStrategy forKey:@"moveStrategy"];
-    [aCoder encodeObject:hexagrid forKey:@"hexagrid"];
+    [aCoder encodeObject:grid forKey:@"grid"];
     [aCoder encodeBool:isBeingDestroyed forKey:@"isBeingDestroyed"];
     
     [aCoder encodeObject:gameModel forKey:@"gameModel"];
@@ -76,7 +76,7 @@ static NSString* imageFiles[] = {@"Core.png", @"RedBall.png", @"GreenBall.png", 
         power = [aDecoder decodeIntForKey:@"power"];
         type = [aDecoder decodeIntForKey:@"type"];
         moveStrategy = [[aDecoder decodeObjectForKey:@"moveStrategy"] retain];
-        hexagrid = [[aDecoder decodeObjectForKey:@"hexagrid"] retain];
+        grid = [[aDecoder decodeObjectForKey:@"grid"] retain];
         isBeingDestroyed = [aDecoder decodeBoolForKey:@"isBeingDestroyed"];
         
         gameModel = [aDecoder decodeObjectForKey:@"gameModel"];
@@ -92,7 +92,7 @@ static NSString* imageFiles[] = {@"Core.png", @"RedBall.png", @"GreenBall.png", 
     [gameModel.ballsJustDestroyed addObject:self];
     [gameModel.attachedBalls removeObject:self];
     [gameModel.hexameshLayer removeChild:self.node cleanup:YES];
-    self.hexagrid.ball = nil;
+    self.grid.ball = nil;
 }
 
 - (void) pauseActions {
@@ -132,10 +132,10 @@ static NSString* imageFiles[] = {@"Core.png", @"RedBall.png", @"GreenBall.png", 
 }
 
 - (void) applyActionsAfterCollapsingTerminates {
-    NSArray* group = [hexagrid sameColorGroup];
+    NSArray* group = [grid sameColorGroup];
     if ([group count] >=3) {
         [delegate playPopWithDelay:0.3f];
-        for (Hexagrid* h in group) {
+        for (Grid* h in group) {
             [h.ball.node runAction:action_scaleToZeroThanDestroy(h.ball, gameModel)];
             h.ball.isBeingDestroyed = YES;
         }
@@ -143,16 +143,19 @@ static NSString* imageFiles[] = {@"Core.png", @"RedBall.png", @"GreenBall.png", 
 }
 
 - (NSArray*) pathToCore {
+    for (Grid* h in gameModel.hexamesh.grids) {
+        h.__parent = nil;
+    }    
     NSMutableArray* path = [[NSMutableArray alloc] init];
     NSMutableArray* arr = [[NSMutableArray alloc] initWithObjects:gameModel.hexamesh.center, nil];
     gameModel.hexamesh.center.dirty = YES;
     while ([arr count] > 0) {
-        Hexagrid* h = [arr objectAtIndex:0];
+        Grid* h = [arr objectAtIndex:0];
         [arr removeObjectAtIndex:0];
         if (h.ball == self) {
             break;
         }
-        for (Hexagrid* n in h.neighbours) {
+        for (Grid* n in h.neighbours) {
             if (![n isEqual:[NSNull null]] && ![n isOutOfGameArea] && !n.dirty && n.ball) {
                 n.__parent = h;
                 n.dirty = YES;
@@ -160,12 +163,14 @@ static NSString* imageFiles[] = {@"Core.png", @"RedBall.png", @"GreenBall.png", 
             }
         }
     }
-    Hexagrid* cursor = self.hexagrid;
-    while (cursor != gameModel.hexamesh.center) {
-        [path addObject:cursor.ball];
-        cursor = cursor.__parent;
+    if (self.grid.__parent) {
+        Grid* cursor = self.grid;
+        while (cursor != gameModel.hexamesh.center) {
+            [path addObject:cursor.ball];
+            cursor = cursor.__parent;
+        }
     }
-    for (Hexagrid* h in gameModel.hexamesh.hexagrids) {
+    for (Grid* h in gameModel.hexamesh.grids) {
         h.dirty = NO;
     }
     [arr release];
@@ -186,12 +191,12 @@ static NSString* imageFiles[] = {@"Core.png", @"RedBall.png", @"GreenBall.png", 
 
 - (NSString*) description {
     NSString* dstr = @"";
-    if (hexagrid && hexagrid.dirty) {
+    if (grid && grid.dirty) {
         dstr = @"/D";
     }
     CGPoint pos = node.position;
-    if (hexagrid) {
-        return [NSString stringWithFormat:@"<B%d:(≈%d,≈%d)-H%d%@-T%d>", identifier, (int)pos.x, (int)pos.y, hexagrid.identifier, dstr, type];
+    if (grid) {
+        return [NSString stringWithFormat:@"<B%d:(≈%d,≈%d)-H%d%@-T%d>", identifier, (int)pos.x, (int)pos.y, grid.identifier, dstr, type];
     } else {
         return [NSString stringWithFormat:@"<B%d:(≈%d,≈%d)----T%d>", identifier, (int)pos.x, (int)pos.y, type];
     }

@@ -9,7 +9,7 @@
 #import "Hexamesh.h"
 
 #import "Ball.h"
-#import "Hexagrid.h"
+#import "Grid.h"
 #import "common.h"
 #import "cocos2d.h"
 
@@ -28,11 +28,11 @@
 
 @implementation Hexamesh
 
-@synthesize level, center, hexagrids;
+@synthesize level, center, grids;
 
 - (void) __listRetainCounts {
     NSMutableString* str = [[NSMutableString alloc] init];
-    for (Hexagrid* h in hexagrids) {
+    for (Grid* h in grids) {
         [str appendFormat:@"%d", [h retainCount]];
     }
     CCLOG(str);
@@ -42,15 +42,15 @@
     if ((self = [super init])) {
         gameModel = aGameModel;
         level = aLevel + 2;
-        hexagrids = [[NSMutableArray alloc] init];
+        grids = [[NSMutableArray alloc] init];
         
         NSMutableArray* arrayy = [[NSMutableArray alloc] init];
         NSMutableArray* last_arrayx = nil;
         for (int i = level + 1; i < 2 * (level + 1); ++i) {
             NSMutableArray* arrayx = [[NSMutableArray alloc] init];
             for (int j = 0; j < i; ++j) {
-                Hexagrid* h = [[Hexagrid alloc] init];
-                [hexagrids addObject:h];
+                Grid* h = [[Grid alloc] initWithNumOfSides:6];
+                [grids addObject:h];
                 [arrayx addObject:h];
                 [h release];
             }
@@ -67,8 +67,8 @@
         for (int i = 2*level; i > level; --i) {
             NSMutableArray* arrayx = [[NSMutableArray alloc] init];
             for (int j = 0; j < i; ++j) {
-                Hexagrid* h = [[Hexagrid alloc] init];
-                [hexagrids addObject:h];
+                Grid* h = [[Grid alloc] initWithNumOfSides:6];
+                [grids addObject:h];
                 [arrayx addObject:h];
                 [h release];
             }
@@ -81,7 +81,7 @@
             [arrayy addObject:arrayx];
         }
         [last_arrayx release];
-        Hexagrid* h = [[arrayy objectAtIndex:0] objectAtIndex:0];
+        Grid* h = [[arrayy objectAtIndex:0] objectAtIndex:0];
         for (int i = 0; i < level; ++i) {
             h = [h.neighbours objectAtIndex:0];
         }
@@ -100,7 +100,7 @@
             NSString* path = [[NSBundle mainBundle] pathForResource: @"Meshballs1" ofType: @"txt" inDirectory:nil];
             NSString* input = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&err];
             NSScanner* scanner = [NSScanner scannerWithString:input];
-            Hexagrid* cursor = center;
+            Grid* cursor = center;
             int dir = 0;
             while (![scanner isAtEnd]) {
                 int count = 0;
@@ -150,7 +150,7 @@
 - (void)encodeWithCoder:(NSCoder*)aCoder {
     [aCoder encodeInt:level forKey:@"level"];
     [aCoder encodeObject:center forKey:@"center"];
-    [aCoder encodeObject:hexagrids forKey:@"hexagrids"];
+    [aCoder encodeObject:grids forKey:@"grids"];
     
     [aCoder encodeObject:gameModel forKey:@"gameModel"];
 }
@@ -159,7 +159,7 @@
     if ((self = [super init])) {
         level = [aDecoder decodeIntForKey:@"level"];
         center = [[aDecoder decodeObjectForKey:@"center"] retain];
-        hexagrids = [[aDecoder decodeObjectForKey:@"hexagrids"] retain];
+        grids = [[aDecoder decodeObjectForKey:@"grids"] retain];
         
         gameModel = [aDecoder decodeObjectForKey:@"gameModel"];
     }
@@ -169,10 +169,10 @@
 - (void) dealloc {
     NSMutableArray* arr = [[NSMutableArray alloc] initWithObjects:center, nil];
     while ([arr count] > 0) {
-        Hexagrid* h = [arr lastObject];
+        Grid* h = [arr lastObject];
         [arr removeLastObject];
         for (int nb_idx = 0; nb_idx < [h.neighbours count]; ++nb_idx) {
-            Hexagrid* n = [h.neighbours objectAtIndex:nb_idx];
+            Grid* n = [h.neighbours objectAtIndex:nb_idx];
             if ([n isEqual:[NSNull null]] == NO) {
                 [arr addObject:n];
             }
@@ -180,7 +180,7 @@
         h.neighbours = nil;
     }
     [arr release];
-    [hexagrids release];
+    [grids release];
     [center release];
     
     [super dealloc];
@@ -199,16 +199,16 @@
         [arr addObject:[NSNumber numberWithInt:level - i]];
     }
     for (int i = 0; i < [arrayx count]; ++i) {
-        Hexagrid* hexagrid = [arrayx objectAtIndex:i];
-        hexagrid.distance = [[arr objectAtIndex:i] intValue];
+        Grid* grid = [arrayx objectAtIndex:i];
+        grid.distance = [[arr objectAtIndex:i] intValue];
     }
 }
 
 - (void) __connect2and5:(NSArray*)arrayx {
     NSAssert([arrayx count] > 0, @"arrayx is empty.");
     for (int i = 0; i < [arrayx count] - 1; ++i) {
-        Hexagrid* h1 = [arrayx objectAtIndex:i];
-        Hexagrid* h2 = [arrayx objectAtIndex:i + 1];
+        Grid* h1 = [arrayx objectAtIndex:i];
+        Grid* h2 = [arrayx objectAtIndex:i + 1];
         [h1.neighbours replaceObjectAtIndex:5 withObject:h2];
         [h2.neighbours replaceObjectAtIndex:2 withObject:h1];
     }
@@ -219,8 +219,8 @@
     NSAssert([arrayx_u count] + offsetu > 0, @"");
     int i = 0;
     while (i < MIN([arrayx_l count], [arrayx_u count])) {
-        Hexagrid* hl = [arrayx_l objectAtIndex:i + offsetl];
-        Hexagrid* hu = [arrayx_u objectAtIndex:i + offsetu];
+        Grid* hl = [arrayx_l objectAtIndex:i + offsetl];
+        Grid* hu = [arrayx_u objectAtIndex:i + offsetu];
         [hl.neighbours replaceObjectAtIndex:1 withObject:hu];
         [hu.neighbours replaceObjectAtIndex:4 withObject:hl];
         i += 1;
@@ -232,8 +232,8 @@
     NSAssert([arrayx_u count] + offsetu > 0, @"");
     int i = 0;
     while (i < MIN([arrayx_l count], [arrayx_u count])) {
-        Hexagrid* hl = [arrayx_l objectAtIndex:i + offsetl];
-        Hexagrid* hu = [arrayx_u objectAtIndex:i + offsetu];
+        Grid* hl = [arrayx_l objectAtIndex:i + offsetl];
+        Grid* hu = [arrayx_u objectAtIndex:i + offsetu];
         [hl.neighbours replaceObjectAtIndex:0 withObject:hu];
         [hu.neighbours replaceObjectAtIndex:3 withObject:hl];
         i += 1;
@@ -244,10 +244,10 @@
     self.center.position = ccp(0, 0);
     NSMutableArray* arr = [NSMutableArray arrayWithObject:center];
     while ([arr count] > 0) {
-        Hexagrid* h = [arr lastObject];
+        Grid* h = [arr lastObject];
         [arr removeLastObject];
         for (int nb_idx = 0; nb_idx < [h.neighbours count]; ++nb_idx) {
-            Hexagrid* n = [h.neighbours objectAtIndex:nb_idx];
+            Grid* n = [h.neighbours objectAtIndex:nb_idx];
             if (![n isEqual:[NSNull null]] && n.dirty == NO) {
                 CGPoint relPos = relPos6[nb_idx];
                 n.position = ccpAdd(h.position, relPos);
@@ -256,7 +256,7 @@
             }
         }
     }
-    for (Hexagrid* h in hexagrids) {
+    for (Grid* h in grids) {
         h.dirty = NO;
     }
 }

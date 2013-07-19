@@ -19,7 +19,7 @@ typedef enum {
 } BallType;
 
 @class BallMoveStrategy;
-@class Hexagrid;
+@class Grid;
 @class CocosNode;
 @class RotatingLayer;
 @class GameModel;
@@ -33,7 +33,7 @@ typedef enum {
     CGFloat power;
     BallType type;
     BallMoveStrategy* moveStrategy;
-    Hexagrid* hexagrid;
+    Grid* grid;
     BOOL isBeingDestroyed;
     
     GameModel* gameModel;
@@ -52,7 +52,7 @@ typedef enum {
 @property (nonatomic, assign) CGFloat power;
 @property (nonatomic, readonly) BallType type;
 @property (nonatomic, retain) BallMoveStrategy* moveStrategy;
-@property (nonatomic, retain) Hexagrid* hexagrid;
+@property (nonatomic, retain) Grid* grid;
 @property (nonatomic, assign) BOOL isBeingDestroyed;
 
 @property (nonatomic, assign) GameModel* gameModel;

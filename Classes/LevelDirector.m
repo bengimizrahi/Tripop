@@ -51,6 +51,11 @@
     NSAssert(NO, @"Should not call this");
 }
 
+- (BOOL) powerActionRequested:(GameModel*)aGameModel {
+    NSAssert(NO, @"Should not call this");
+    return NO;
+}
+
 @end
 
 @implementation StandardLevelDirector

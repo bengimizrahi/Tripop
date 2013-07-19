@@ -9,7 +9,7 @@
 #import "HexameshLayer.h"
 
 #import "Ball.h"
-#import "Hexagrid.h"
+#import "Grid.h"
 #import "Hexamesh.h"
 #import "GameModel.h"
 #import "TripopAppDelegate.h"
@@ -25,7 +25,7 @@
     if ((self = [super init])) {
         self.isTouchEnabled = YES;
         CGSize s = [[Director sharedDirector] winSize];
-        self.position = ccp(s.width/2, s.height/2 + 45.0f);
+        self.position = ccp(s.width/2, s.height/2 + 9.0f);
         self.anchorPoint = ccp(0.0f, 0.0f);
         self.relativeAnchorPoint = YES;
         
@@ -47,7 +47,7 @@
     if ((self = [super init])) {
         self.isTouchEnabled = YES;
         CGSize s = [[Director sharedDirector] winSize];
-        self.position = ccp(s.width/2, s.height/2 + 45.0f);
+        self.position = ccp(s.width/2, s.height/2 + 9.0f);
         self.anchorPoint = ccp(0.0f, 0.0f);
         self.relativeAnchorPoint = YES;
         

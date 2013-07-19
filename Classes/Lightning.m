@@ -8,7 +8,7 @@
 
 #import "Lightning.h"
 
-#import "Hexagrid.h"
+#import "Grid.h"
 #import "common.h"
 #import "cocos2d.h"
 #import "GameModel.h"
@@ -37,7 +37,7 @@
     // removed -> [gameModel.ballsJustDestroyed addObject:self];
     [gameModel.attachedBalls removeObject:self];
     [gameModel.hexameshLayer removeChild:self.node cleanup:YES];
-    self.hexagrid.ball = nil;
+    self.grid.ball = nil;
 }
 
 - (void) pauseActions {
