@@ -22,6 +22,17 @@
     return self;
 }
 
+- (void)encodeWithCoder:(NSCoder*)aCoder {
+    [aCoder encodeObject:ball forKey:@"ball"];
+}
+
+- (id)initWithCoder:(NSCoder*)aDecoder {
+    if ((self = [super init])) {
+        ball = [aDecoder decodeObjectForKey:@"ball"];
+    }
+    return self;
+}
+
 - (void) moveByDeltaTime:(CGFloat)dt {
     NSAssert(NO, @"override");
 }
@@ -39,6 +50,19 @@
         normalizedVelocity = ccpNeg(v);
         velocity = ccpMult(normalizedVelocity, aSpeed);
     }
+    return self;
+}
+
+- (void)encodeWithCoder:(NSCoder*)aCoder {
+    [super encodeWithCoder:aCoder];
+    [aCoder encodeCGPoint:normalizedVelocity forKey:@"normalizedVelocity"];
+    [aCoder encodeCGPoint:velocity forKey:@"velocity"];
+}
+
+- (id)initWithCoder:(NSCoder*)aDecoder {
+    [super initWithCoder:aDecoder];
+    normalizedVelocity = [aDecoder decodeCGPointForKey:@"normalizedVelocity"];
+    velocity = [aDecoder decodeCGPointForKey:@"velocity"];
     return self;
 }
 
@@ -62,6 +86,21 @@
     return self;
 }
 
+- (void)encodeWithCoder:(NSCoder*)aCoder {
+    [super encodeWithCoder:aCoder];
+    [aCoder encodeFloat:angularSpeed forKey:@"angularSpeed"];
+    [aCoder encodeFloat:horizontalSpeed forKey:@"horizontalSpeed"];
+    [aCoder encodeFloat:angle forKey:@"angle"];
+}
+
+- (id)initWithCoder:(NSCoder*)aDecoder {
+    [super initWithCoder:aDecoder];
+    angularSpeed = [aDecoder decodeFloatForKey:@"angularSpeed"];
+    horizontalSpeed = [aDecoder decodeFloatForKey:@"horizontalSpeed"];
+    angle = [aDecoder decodeFloatForKey:@"angle"];
+    return self;
+}
+
 - (void) moveByDeltaTime:(CGFloat)dt {
     angle += angularSpeed * dt;
     ball.position = ccp(ball.position.x + horizontalSpeed * dt, sinf(angle)*GAME_AREA_RADIUS);
@@ -82,6 +121,23 @@
         angle = aApproachAngle;
         ball.position = ccpMult(ccpForAngle(angle), distance);
     }
+    return self;
+}
+
+- (void)encodeWithCoder:(NSCoder*)aCoder {
+    [super encodeWithCoder:aCoder];
+    [aCoder encodeFloat:angularSpeed forKey:@"angularSpeed"];
+    [aCoder encodeFloat:speed forKey:@"speed"];
+    [aCoder encodeFloat:distance forKey:@"distance"];
+    [aCoder encodeFloat:angle forKey:@"angle"];
+}
+
+- (id)initWithCoder:(NSCoder*)aDecoder {
+    [super initWithCoder:aDecoder];
+    angularSpeed = [aDecoder decodeFloatForKey:@"angularSpeed"];
+    speed = [aDecoder decodeFloatForKey:@"speed"];
+    distance = [aDecoder decodeFloatForKey:@"distance"];
+    angle = [aDecoder decodeFloatForKey:@"angle"];
     return self;
 }
 

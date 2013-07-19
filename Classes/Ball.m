@@ -10,32 +10,33 @@
 
 #import "BallMoveStrategy.h"
 #import "Hexagrid.h"
-#import "Level.h"
 #import "GameModel.h"
 #import "common.h"
 #import "cocos2d.h"
+
+static NSString* imageFiles[] = {@"Core.png", @"RedBall.png", @"GreenBall.png", @"BlueBall.png", @"YellowBall.png", @"Dynamite.png", @"Lightning.png"};
 
 @implementation Ball
 
 @synthesize identifier, node;
 @synthesize points, power, type, moveStrategy, hexagrid, isBeingDestroyed;
+@synthesize gameModel;
 @dynamic position;
 @synthesize __verticalDist, __horizontalDist, __actualDist;
 
-- (id) init {
-    if ((self = [self initWithType:-1])) {
+- (id) initWithGameModel:(GameModel*)aGameModel {
+    if ((self = [self initWithType:-1 gameModel:aGameModel])) {
     }
     return self;
 }
 
-- (id) initWithType:(BallType)aType {
+- (id) initWithType:(BallType)aType gameModel:(GameModel*)aGameModel {
     if ((self = [super init])) {
-        static int nextId = 0;
-        identifier = nextId++;
+        gameModel = aGameModel;
+        identifier = nextBallId++;
         prevPosition = node.position;
         isBeingDestroyed = NO;
         if (aType != -1) {
-            static NSString* imageFiles[] = {@"Core.png", @"RedBall.png", @"GreenBall.png", @"BlueBall.png", @"YellowBall.png", @"Dynamite.png", @"Lightning.png"};
             type = aType;
             node = [[Sprite alloc] initWithFile:imageFiles[aType]];
         }
@@ -48,6 +49,46 @@
     [moveStrategy release];
     
     [super dealloc];
+}
+
+- (void) encodeWithCoder:(NSCoder*)aCoder {
+    [aCoder encodeInt:identifier forKey:@"identifier"];
+    [aCoder encodeCGPoint:node.position forKey:@"node.position"];
+    [aCoder encodeInt:points forKey:@"points"];
+    [aCoder encodeInt:power forKey:@"power"];
+    [aCoder encodeInt:type forKey:@"type"];
+    [aCoder encodeObject:moveStrategy forKey:@"moveStrategy"];
+    [aCoder encodeObject:hexagrid forKey:@"hexagrid"];
+    [aCoder encodeBool:isBeingDestroyed forKey:@"isBeingDestroyed"];
+    
+    [aCoder encodeObject:gameModel forKey:@"gameModel"];
+
+    [aCoder encodeCGPoint:prevPosition forKey:@"prevPosition"];
+}
+
+- (id) initWithCoder:(NSCoder*)aDecoder {
+    if ((self = [super init])) {
+        identifier = [aDecoder decodeIntForKey:@"identifier"];
+        points = [aDecoder decodeIntForKey:@"points"];
+        power = [aDecoder decodeIntForKey:@"power"];
+        type = [aDecoder decodeIntForKey:@"type"];
+        moveStrategy = [[aDecoder decodeObjectForKey:@"moveStrategy"] retain];
+        hexagrid = [[aDecoder decodeObjectForKey:@"hexagrid"] retain];
+        isBeingDestroyed = [aDecoder decodeBoolForKey:@"isBeingDestroyed"];
+        
+        gameModel = [aDecoder decodeObjectForKey:@"gameModel"];
+        prevPosition = [aDecoder decodeCGPointForKey:@"prevPosition"];
+
+        node = [[Sprite alloc] initWithFile:imageFiles[type]];
+        node.position = [aDecoder decodeCGPointForKey:@"node.position"];
+    }
+    return self;
+}
+
+- (void) pauseActions {
+}
+
+- (void) resumeActions {
 }
 
 - (void) moveByDeltaTime:(CGFloat)dt {
@@ -83,8 +124,9 @@
 - (void) applyActionsAfterCollapsingTerminates {
     NSArray* group = [hexagrid sameColorGroup];
     if ([group count] >=3) {
+        [gameModel playPopWithDelay:0.3f];
         for (Hexagrid* h in group) {
-            [h.ball.node runAction:action_scaleToZeroThanDestroy(h.ball)];
+            [h.ball.node runAction:action_scaleToZeroThanDestroy(h.ball, gameModel)];
             h.ball.isBeingDestroyed = YES;
         }
     }
@@ -98,14 +140,14 @@
         [pathToCore addObject:b];
         int minDistance = LEVEL+1;
         for (Hexagrid* h in b.hexagrid.neighbours) {
-            if (![h isEqual:[NSNull null]] && h.ball) {
+            if (![h isNull] && h.ball) {
                 if (h.distance < minDistance) {
                     minDistance = h.distance;
                 }
             }
         }
         for (Hexagrid* h in b.hexagrid.neighbours) {
-            if (![h isEqual:[NSNull null]] && h.ball) {
+            if (![h isNull] && h.ball) {
                 if (h.distance == minDistance) {
                     [arr addObject:h];
                 }

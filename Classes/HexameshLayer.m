@@ -21,7 +21,7 @@
 
 @implementation HexameshLayer
 
-- (id) init {
+- (id) initWithGameModel:(GameModel*)aGameModel {
     if ((self = [super init])) {
         self.isTouchEnabled = YES;
         CGSize s = [[Director sharedDirector] winSize];
@@ -29,9 +29,32 @@
         self.anchorPoint = ccp(0.0f, 0.0f);
         self.relativeAnchorPoint = YES;
         
+        gameModel = aGameModel;
         __x = 0;
         __doubleClickState = DoubleClickState_None;
         lastStoredRotation = self.rotation;
+    }
+    return self;
+}
+
+- (void) encodeWithCoder:(NSCoder*)aCoder {
+    [aCoder encodeFloat:lastStoredRotation forKey:@"lastStoredRotation"];
+    self.rotation = prevRotation = lastStoredRotation;
+    [aCoder encodeObject:gameModel forKey:@"gameModel"];
+}
+
+- (id) initWithCoder:(NSCoder*)aDecoder {
+    if ((self = [super init])) {
+        self.isTouchEnabled = YES;
+        CGSize s = [[Director sharedDirector] winSize];
+        self.position = ccp(s.width/2, s.height/2 + 45.0f);
+        self.anchorPoint = ccp(0.0f, 0.0f);
+        self.relativeAnchorPoint = YES;
+        
+        gameModel = [aDecoder decodeObjectForKey:@"gameModel"];
+        __x = 0;
+        __doubleClickState = DoubleClickState_None;
+        lastStoredRotation = [aDecoder decodeFloatForKey:@"lastStoredRotation"];
     }
     return self;
 }
@@ -51,7 +74,7 @@
     UITouch* touch = [touches anyObject];
     CGPoint p = [self __positionOnLayer:touch];
     if (p.y > 150) {
-        [gameModel() powerActionRequested];
+        [gameModel powerActionRequested];
     }
     NSTimeInterval timestamp = [touch timestamp];
     BOOL touchIsTooLate = (timestamp - __lastTouchBeganTimestamp > 0.2) ? YES : NO;
@@ -104,7 +127,7 @@
         NSAssert(NO, @"__doubleClickState == DoubleClickState_FirstTouchEnded");
     } else if (__doubleClickState == DoubleClickState_SecondTouchBegan) {
         if (!touchIsTooLate) {
-            //[gameModel() pauseGame];
+            [gameModel pauseGame];
         }
         __doubleClickState = DoubleClickState_None;   
     }
@@ -118,7 +141,7 @@
 }
 
 - (void) __touchMovedWithDelta:(CGFloat)dx {
-    lastStoredRotation = lastStoredRotation + 180.0f/GAME_AREA_RADIUS*dx*TOUCH_SENSITIVITY;
+    lastStoredRotation = lastStoredRotation + dx*TOUCH_SENSITIVITY;
 }
 
 @end

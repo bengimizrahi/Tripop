@@ -11,18 +11,42 @@
 #import "Dynamite.h"
 #import "common.h"
 #import "cocos2d.h"
+#import "GameModel.h"
 
 @implementation Dynamite
 
-- (id) initWithInpectLevel:(int)aLevel {
-    if ((self = [super initWithType:BallType_Dynamite])) {
+- (id) initWithInpectLevel:(int)aLevel gameModel:(GameModel*)aGameModel {
+    if ((self = [super initWithType:BallType_Dynamite gameModel:aGameModel])) {
         inpectLevel = aLevel;
-        [node runAction:[RepeatForever actionWithAction:[RotateBy actionWithDuration:0.25f angle:360]]];
+        [self resumeActions];
     }
     return self;
 }
 
-- (void) applyActionsAfterConnectingTo:(Ball*)aAttachedBall {    
+- (void) encodeWithCoder:(NSCoder*)aCoder {
+    [super encodeWithCoder:aCoder];
+    [aCoder encodeInt:inpectLevel forKey:@"inpectLevel"];
+}
+
+- (id) initWithCoder:(NSCoder*)aDecoder {
+    [super initWithCoder:aDecoder];
+    inpectLevel = [aDecoder decodeIntForKey:@"inpectLevel"];
+    [self resumeActions];
+    return self;
+} 
+
+- (void) pauseActions {
+    [node stopActionByTag:ACTION_ROTATE_FOREVER];
+}
+
+- (void) resumeActions {
+    Action* action = [RepeatForever actionWithAction:[RotateBy actionWithDuration:0.25f angle:360]];
+    action.tag = ACTION_ROTATE_FOREVER;
+    [node runAction:action];
+}
+
+- (void) applyActionsAfterConnectingTo:(Ball*)aAttachedBall {
+    [gameModel playExplosionWithDelay:0.2f];
     Hexagrid* h = aAttachedBall.hexagrid;
     NSArray* rings = [h ringsToLevel:inpectLevel];
     for (int i = 0; i < [rings count]; ++i) {
@@ -30,11 +54,13 @@
         for (Hexagrid* rh in ring) {
             if (rh.ball.type != BallType_Core && rh.ball != self) {
                 rh.ball.power = 0.0f;
-                [rh.ball.node runAction:action_inflateThanDestroy(rh.ball)];
+                rh.ball.isBeingDestroyed = YES;
+                [rh.ball.node runAction:action_inflateThanDestroy(rh.ball, gameModel)];
             }
         }
     }
-    [node runAction:action_destroy(self)];
+    isBeingDestroyed = YES;
+    [node runAction:action_destroy(self, gameModel)];
 }
 
 @end

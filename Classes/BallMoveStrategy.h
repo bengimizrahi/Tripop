@@ -10,11 +10,13 @@
 
 @class Ball;
 
-@interface BallMoveStrategy : NSObject {
+@interface BallMoveStrategy : NSObject<NSCoding> {
     Ball* ball;
 }
 
 - (id) initWithBall:(Ball*)aBall;
+- (void)encodeWithCoder:(NSCoder*)aCoder;
+- (id)initWithCoder:(NSCoder*)aDecoder;
 - (void) moveByDeltaTime:(CGFloat)dt;
 
 @end

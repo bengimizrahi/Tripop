@@ -47,7 +47,7 @@
         hiScoreLabel.anchorPoint = ccp(0.0f, 0.0f);
         hiScoreLabel.scale = 0.25f;
         [self addChild:hiScoreLabel];
-        hiScoreValueLabel = [[BitmapFontAtlas bitmapFontAtlasWithString:@"00000000" fntFile:@"silkworm.fnt"] retain];
+        hiScoreValueLabel = [[BitmapFontAtlas bitmapFontAtlasWithString:[NSString stringWithFormat:@"%d", hiscore] fntFile:@"silkworm.fnt"] retain];
         hiScoreValueLabel.position = ccp(250.0f, 3.0f);
         hiScoreValueLabel.anchorPoint = ccp(0.0f, 0.0f);
         hiScoreValueLabel.scale = 0.25f;
@@ -66,4 +66,8 @@
     [super dealloc];
 }
 
+- (void) convertToDemoMode {
+    [self removeChild:scoreLabel cleanup:YES];
+    [self removeChild:scoreValueLabel cleanup:YES];
+}
 @end

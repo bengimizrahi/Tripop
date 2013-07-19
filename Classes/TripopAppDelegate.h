@@ -10,13 +10,13 @@
 
 @class GameModel;
 
-@interface TripopAppDelegate : NSObject <UIApplicationDelegate> {
+@interface TripopAppDelegate : NSObject <UIApplicationDelegate, UIAlertViewDelegate> {
 	UIWindow *window;
     
     GameModel* gameModel;
 }
 
-@property (nonatomic, retain) UIWindow *window;
+@property (nonatomic, retain) UIWindow* window;
 
 @property (nonatomic, retain) GameModel* gameModel;
 

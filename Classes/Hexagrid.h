@@ -11,7 +11,7 @@
 @class Ball;
 @class Hexagrid;
 
-@interface Hexagrid : NSObject {
+@interface Hexagrid : NSObject<NSCoding> {
     int identifier;
     Ball* ball;
     NSMutableArray* neighbours;
@@ -31,9 +31,12 @@
 
 @property (nonatomic, assign) int __ringDistance;
 
+- (void)encodeWithCoder:(NSCoder*)aCoder;
+- (id)initWithCoder:(NSCoder*)aDecoder;
+
 - (NSArray*) sameColorGroup;
 - (NSArray*) ringsToLevel:(int)aLevel;
-
+- (BOOL) isNull;
 - (NSString*) description;
 
 @end

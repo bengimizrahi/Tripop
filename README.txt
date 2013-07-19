@@ -5,22 +5,20 @@
 
 -----------o-------------o-------------o------------o----------
 
-----
     Near TO-DO List:
 
-3) We should add "Exit Game" option inside the GameModel()
-    3.1) Touching any corner will exit the game.
-4) If we paused a game, tapping on New Game will pop up the option New Game / Resume Game.
-5) Make the Hexamesh in LEVEL+1 levels and instead of using NSNull, use h.distance < 9
-    5.1) Don't forget to check if the center hexagrid is correct everywhere.
+1) Power bar duzeltilecek.
+ - Asagidaki gibi.
+ - Color ball eklenecek
+ - Makas eklenecek
 6) Add HelpScene()
 7) Add Sound Effects.
-8) Add new levels.
-    8.1) Add levels with sinus ball strategy.
-    8.2) Add levels with both sinus and spiral move strategies.
-    8.3) Make sure last level never finishes.
-9) Saving/Loading game state.
 10) RELEASE THE GAMEEEE!... :)
+
+-----------o-------------o-------------o------------o----------
+
+Questions:
+1) Do we really need GameModel.hexagrids?
 
 -----------o-------------o-------------o------------o----------
 

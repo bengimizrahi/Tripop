@@ -22,8 +22,9 @@ typedef enum {
 @class Hexagrid;
 @class CocosNode;
 @class RotatingLayer;
+@class GameModel;
 
-@interface Ball : NSObject {
+@interface Ball : NSObject<NSCoding> {
     int identifier;
     CocosNode* node;
     
@@ -33,6 +34,8 @@ typedef enum {
     BallMoveStrategy* moveStrategy;
     Hexagrid* hexagrid;
     BOOL isBeingDestroyed;
+    
+    GameModel* gameModel;
     
     CGPoint prevPosition;
     CGFloat __verticalDist;
@@ -50,13 +53,21 @@ typedef enum {
 @property (nonatomic, retain) Hexagrid* hexagrid;
 @property (nonatomic, assign) BOOL isBeingDestroyed;
 
+@property (nonatomic, assign) GameModel* gameModel;
+
 @property (nonatomic) CGPoint position;
 
 @property (nonatomic, assign) CGFloat __verticalDist;
 @property (nonatomic, assign) CGFloat __horizontalDist;
 @property (nonatomic, assign) CGFloat __actualDist;
 
-- (id) initWithType:(BallType)aType;
+- (id) initWithGameModel:(GameModel*)aGameModel;
+- (id) initWithType:(BallType)aType gameModel:(GameModel*)aGameModel;
+- (void) encodeWithCoder:(NSCoder*)aCoder;
+- (id) initWithCoder:(NSCoder*)aDecoder;
+
+- (void) pauseActions;
+- (void) resumeActions;
 
 - (void) moveByDeltaTime:(CGFloat)dt;
 - (CGPoint) positionOnLayer:(RotatingLayer*)aLayer;

@@ -13,7 +13,7 @@
     int inpectLevel;
 }
 
-- (id) initWithInpectLevel:(int)aLevel;
+- (id) initWithInpectLevel:(int)aLevel gameModel:(GameModel*)aGameModel;
 - (void) applyActionsAfterConnectingTo:(Ball*)aAttachedBall;
 
 @end

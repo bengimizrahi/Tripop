@@ -28,4 +28,6 @@
 @property (nonatomic, readonly) BitmapFontAtlas* hiScoreLabel;
 @property (nonatomic, readonly) BitmapFontAtlas* hiScoreValueLabel;
 
+- (void) convertToDemoMode;
+
 @end

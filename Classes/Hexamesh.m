@@ -20,7 +20,6 @@
 - (void) __connect1and4:(NSArray*)arrayx_l :(NSArray*)arrayx_u offsetl:(int)offsetl offsetu:(int)offsetu;
 - (void) __connect0and3:(NSArray*)arrayx_l :(NSArray*)arrayx_u offsetl:(int)offsetl offsetu:(int)offsetu;
 - (void) __setPositions;
-- (void) __resetDirty;
 
 - (void) __listRetainCounts;
 
@@ -39,9 +38,10 @@
     CCLOG(str);
 }
 
-- (id) initWithLevel:(int)aLevel {
+- (id) initWithLevel:(int)aLevel gameModel:(GameModel*)aGameModel {
     if ((self = [super init])) {
-        level = aLevel;
+        gameModel = aGameModel;
+        level = aLevel + 1;
         hexagrids = [[NSMutableArray alloc] init];
         
         NSMutableArray* arrayy = [[NSMutableArray alloc] init];
@@ -89,9 +89,25 @@
         [arrayy release];
         
         [self __setPositions];
-        Ball* ball = [[Ball alloc] initWithType:BallType_Core];
-        center.ball = ball;
-        [ball release];
+    }
+    return self;
+}
+
+- (void)encodeWithCoder:(NSCoder*)aCoder {
+    [aCoder encodeInt:level forKey:@"level"];
+    [aCoder encodeObject:center forKey:@"center"];
+    [aCoder encodeObject:hexagrids forKey:@"hexagrids"];
+    
+    [aCoder encodeObject:gameModel forKey:@"gameModel"];
+}
+
+- (id)initWithCoder:(NSCoder*)aDecoder {
+    if ((self = [super init])) {
+        level = [aDecoder decodeIntForKey:@"level"];
+        center = [[aDecoder decodeObjectForKey:@"center"] retain];
+        hexagrids = [[aDecoder decodeObjectForKey:@"hexagrids"] retain];
+        
+        gameModel = [aDecoder decodeObjectForKey:@"gameModel"];
     }
     return self;
 }
@@ -178,7 +194,7 @@
         [arr removeLastObject];
         for (int nb_idx = 0; nb_idx < [h.neighbours count]; ++nb_idx) {
             Hexagrid* n = [h.neighbours objectAtIndex:nb_idx];
-            if ([n isEqual:[NSNull null]] == NO && n.dirty == NO) {
+            if (![n isNull] && n.dirty == NO) {
                 CGPoint relPos = relPos6[nb_idx];
                 n.position = ccpAdd(h.position, relPos);
                 n.dirty = YES;
@@ -186,10 +202,6 @@
             }
         }
     }
-    [self __resetDirty];
-}
-
-- (void) __resetDirty {
     for (Hexagrid* h in hexagrids) {
         h.dirty = NO;
     }

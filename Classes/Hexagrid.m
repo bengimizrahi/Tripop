@@ -19,8 +19,7 @@
 
 - (id) init {
     if ((self = [super init])) {
-        static int nextId = 0;
-        identifier = nextId++;
+        identifier = nextHexagridId++;
         self.neighbours = [NSMutableArray arrayWithObjects:[NSNull null], [NSNull null], [NSNull null], [NSNull null], [NSNull null], [NSNull null], nil];
         dirty = NO;
     }
@@ -32,6 +31,27 @@
     [neighbours release];
     
     [super dealloc];
+}
+
+- (void)encodeWithCoder:(NSCoder*)aCoder {
+    [aCoder encodeInt:identifier forKey:@"identifier"];
+    [aCoder encodeObject:ball forKey:@"ball"];
+    [aCoder encodeObject:neighbours forKey:@"neighbours"];
+    // ignore dirty
+    [aCoder encodeInt:distance forKey:@"distance"];
+    [aCoder encodeCGPoint:position forKey:@"position"];
+}
+
+- (id)initWithCoder:(NSCoder*)aDecoder {
+    if ((self = [super init])) {
+        identifier = [aDecoder decodeIntForKey:@"identifier"];
+        ball = [[aDecoder decodeObjectForKey:@"ball"] retain];
+        neighbours = [[aDecoder decodeObjectForKey:@"neighbours"] retain];
+        dirty = NO;
+        distance = [aDecoder decodeIntForKey:@"distance"];
+        position = [aDecoder decodeCGPointForKey:@"position"];
+    }
+    return self;
 }
 
 - (void) setBall:(Ball*)aBall {
@@ -54,7 +74,7 @@
         Hexagrid* h = [arr lastObject];
         [arr removeLastObject];
         for (Hexagrid* n in h.neighbours) {
-            if ((![n isEqual:[NSNull null]]) && n.ball && (!n.ball.isBeingDestroyed) && n.ball.type == ball.type && (!n.dirty)) {
+            if ((![n isNull]) && n.ball && (!n.ball.isBeingDestroyed) && n.ball.type == ball.type && (!n.dirty)) {
                 [arr addObject:n];
                 [group addObject:n];
                 n.dirty = YES;
@@ -85,7 +105,7 @@
         if (h.__ringDistance < aLevel) {
             [[rings objectAtIndex:h.__ringDistance] addObject:h];
             for (Hexagrid* n in h.neighbours) {
-                if (![n isEqual:[NSNull null]] && !n.dirty) {
+                if (![n isNull] && !n.dirty) {
                     n.__ringDistance = h.__ringDistance + 1;
                     n.dirty = YES;
                     [arr addObject:n];
@@ -100,6 +120,10 @@
         }
     }
     return [rings autorelease];
+}
+
+- (BOOL) isNull {
+    return distance == LEVEL + 1;
 }
 
 - (NSString*) description {

@@ -19,14 +19,20 @@ typedef enum {
     DoubleClickState_SecondTouchBegan,
 } DoubleClickState;
 
-@interface HexameshLayer : RotatingLayer {
+@interface HexameshLayer : RotatingLayer<NSCoding> {
     CGFloat lastStoredRotation;
+
+    GameModel* gameModel;
     
     CGFloat __x;
     BOOL __smoothTouch;
     NSTimeInterval __lastTouchBeganTimestamp;
     DoubleClickState __doubleClickState;
 }
+
+- (id) initWithGameModel:(GameModel*)aGameModel;
+- (void) encodeWithCoder:(NSCoder*)aCoder;
+- (id) initWithCoder:(NSCoder*)aDecoder;
 
 - (void) updateRotation;
 

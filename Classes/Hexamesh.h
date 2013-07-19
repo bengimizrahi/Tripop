@@ -9,17 +9,22 @@
 #import <Foundation/Foundation.h>
 
 @class Hexagrid;
+@class GameModel;
 
-@interface Hexamesh : NSObject {
+@interface Hexamesh : NSObject<NSCoding> {
     int level;
     Hexagrid* center;
     NSMutableArray* hexagrids;
+    
+    GameModel* gameModel;
 }
 
 @property (nonatomic, readonly) int level;
 @property (nonatomic, readonly) Hexagrid* center;
 @property (nonatomic, readonly) NSMutableArray* hexagrids;
 
-- (id) initWithLevel:(int)aLevel;
+- (id) initWithLevel:(int)aLevel gameModel:(GameModel*)aGameModel;
+- (void)encodeWithCoder:(NSCoder*)aCoder;
+- (id)initWithCoder:(NSCoder*)aDecoder;
 
 @end
