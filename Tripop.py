@@ -21,9 +21,9 @@ class CreateBallLogic:
 
     def __init__(self, gameLayer):
         self.gameLayer = gameLayer
-        self.createBallInterval = 1.0
+        self.createBallInterval = 4.0
         self.createBallTimer = self.createBallInterval
-        self.ballSpeed = 70 #px/sec
+        self.ballSpeed = 70#/0.001 #px/sec
 
     def __call__(self, dt):
         self.createBallTimer += dt
@@ -31,6 +31,7 @@ class CreateBallLogic:
             self.createBallInterval = max(1.0, self.createBallInterval-0.1)
             self.createBallTimer = 0.0
             angle = 2*math.pi*random.random()
+            angle = math.pi
             type = random.choice([BALL_TYPE_RED, BALL_TYPE_GREEN, BALL_TYPE_YELLOW, BALL_TYPE_BLUE])
             newBall = createBall(angle, self.ballSpeed, type)
             self.gameLayer.addBall(newBall)
@@ -48,6 +49,7 @@ class HexameshLayer(Layer):
         self.add(self.hexamesh.center.ball.sprite)
         self.attachedBalls = [self.hexamesh.center.ball]
         self.poppingBalls = []
+        self.lastReportedRotation = 0.0
         
     def addBall(self, ball):
         assert not ball in self.attachedBalls
@@ -64,8 +66,8 @@ class HexameshLayer(Layer):
             DEBUG = not DEBUG 
         
     def on_mouse_motion(self, x, y, dx, dy):
-        self.rotation = self.rotation + 180.0/GAME_AREA_RADIUS*dx
-
+        self.lastReportedRotation = self.rotation + 180.0/GAME_AREA_RADIUS*dx
+        
 class GameLayer(Layer):
 
     def __init__(self, filename):
@@ -126,22 +128,21 @@ class GameLayer(Layer):
         return r
 
     def connect(self, attachedBall, freeBall):
-        x1, y1 = attachedBall.position;
-        x2, y2 = freeBall.positionOnLayer(self.hexameshLayer);
+        x1, y1 = attachedBall.position
+        x2, y2 = freeBall.position
         angle = self.angleBetween((x1, y1), (x2, y2))
         x, y = x2-x1, y2-y1
-        if x > 0 and y >= 0 and 0 <= angle < math.pi/3: nb_idx = 0
-        elif y >= 0 and math.pi/3 <= angle < 2*math.pi/3: nb_idx = 1
-        elif x < 0 and y >= 0 and 2*math.pi/3 <= angle < math.pi: nb_idx = 2
-        elif x < 0 and y < 0 and math.pi <= angle < 4*math.pi/3: nb_idx = 3
-        elif y < 0 and 4*math.pi/3 <= angle < 5*math.pi/3: nb_idx = 4
-        elif y < 0 and 5*math.pi/3 <= angle < 2*math.pi: nb_idx = 5
-        else: assert False, "connect error"
+        if x >= 0 and y >= 0 and 0 <= angle <= math.pi/3: nb_idx = 0
+        elif y >= 0 and math.pi/3 <= angle <= 2*math.pi/3: nb_idx = 1
+        elif x <= 0 and y >= 0 and 2*math.pi/3 <= angle <= math.pi: nb_idx = 2
+        elif x <= 0 and y <= 0 and math.pi <= angle <= 4*math.pi/3: nb_idx = 3
+        elif y <= 0 and 4*math.pi/3 <= angle <= 5*math.pi/3: nb_idx = 4
+        elif y <= 0 and 5*math.pi/3 <= angle <= 2*math.pi: nb_idx = 5
+        else: assert False, "connect error x=%.2f y=%.2f angle=%.2f" % (x, y, angle)
         nb_hexagrid = attachedBall.hexagrid.neighbours[nb_idx]
         assert nb_hexagrid.ball == None, "Can't connect, there is a ball %s in %s" % (nb_hexagrid.ball, nb_hexagrid)
         nb_hexagrid.setBall(freeBall)
         freeBall.velocity *= 0
-        freeBall.sprite.stop()
     
     def addToPoppingBalls(self, balls):
         for b in balls: b.goingToPop = True
@@ -150,7 +151,7 @@ class GameLayer(Layer):
     def updatePoppingBalls(self, dt):
         toBeRemoved = []
         for b in self.hexameshLayer.poppingBalls:
-            b.sprite.scale -= dt*4
+            b.sprite.scale -= dt*3
             b.sprite.opacity -= dt*600
             if b.sprite.scale <= 0.01:
                 toBeRemoved.append(b)
@@ -178,7 +179,6 @@ class GameLayer(Layer):
 
         if len(unconnectedBalls) == 0:
             return
-        if DEBUG: print "We are going to slide these: ", unconnectedBalls
         
         def closestGrid(grids):
             c = None
@@ -209,7 +209,6 @@ class GameLayer(Layer):
 
         unconnectedBalls.sort(distcmp)
         ballsToCheckForPopping = set(unconnectedBalls[:])
-        if DEBUG: print "We are going to apply sameColorGroup() to these: ", ballsToCheckForPopping
         
         while len(unconnectedBalls) > 0:
             b = unconnectedBalls.pop(0)
@@ -222,37 +221,100 @@ class GameLayer(Layer):
                 unconnectedBalls.append(b)
         
         poppingBallList = []
-        print "ballsToCheckForPopping: ", ballsToCheckForPopping
         while len(ballsToCheckForPopping) > 0:
             b = ballsToCheckForPopping.pop()
             if b.goingToPop == False:
                 group = b.hexagrid.sameColorGroup()
-                print "sameColorGroup is ", group
                 if len(group) >= 3:
                     self.addToPoppingBalls([h.ball for h in group])
                 else:
                     ballsToCheckForPopping -= set([h.ball for h in group])
 
-    def step(self, dt):
-        self.pause()
-        for aFreeBall in self.freeBalls:
-            aFreeBall.move(dt)
-            for anAttachedBall in self.hexameshLayer.attachedBalls:
-                if self.distanceSquared(aFreeBall, anAttachedBall) <= FOUR_DIST_SQR:
-                    if anAttachedBall.hexagrid.distance >= LEVEL:
-                        print "GAME OVER!!!"
-                        exit()
-                    self.connect(anAttachedBall, aFreeBall)
-                    self.removeBall(aFreeBall)
-                    self.hexameshLayer.addBall(aFreeBall)
-                    for b in self.hexameshLayer.attachedBalls:
-                        assert b.hexagrid.dirty == False, "%s is dirty" % b
-                    group = aFreeBall.hexagrid.sameColorGroup()
-                    if len(group) >= 3:
-                        self.addToPoppingBalls([h.ball for h in group])
-                    break
+    def checkCollision(self, ball):
+        def pdis(a, b, c):
+            if DEBUG: print "begin pdis(a=", a, ", b=", b, ", c=", c
+            t = a[0]-b[0], a[1]-b[1]
+            if DEBUG: print "t = ", t
+            dd = math.sqrt(t[0]**2+t[1]**2)
+            if DEBUG: print "dd = ", dd
+            assert dd > 0, "dd must not be 0."
+            t = t[0]/dd, t[1]/dd
+            if DEBUG: print "t = ", t
+            n = -t[1], t[0]
+            if DEBUG: print "n = ", n
+            bc = c[0]-b[0], c[1]-b[1]
+            if DEBUG: print "bc = ", bc
+            vd = math.fabs(bc[0]*n[0]+bc[1]*n[1])
+            hd = math.fabs(bc[0]*t[0]+bc[1]*t[1])
+            ad = None
+            if 2*BALL_RADIUS >= vd:
+                ad = hd - math.sqrt(FOUR_RADIUS_SQR - vd**2)
+            r = (dd, vd, hd, ad)
+            if DEBUG: print r
+            if DEBUG: print "end pdis()"
+            return r
+            
+        pos = ball.positionOnLayer(self.hexameshLayer)
+        prevPos = ball.prevPositionOnLayer(self.hexameshLayer)
+        candidateBall = None
+        for ab in self.hexameshLayer.attachedBalls:
+            dd, ab.__verticalDist, ab.__horizontalDist, ab.__actualDist = pdis(pos, prevPos, ab.position)
+            if DEBUG: print "dd, ab.__verticalDist, ab.__horizontalDist, ab.__actualDist = ", (dd, ab.__verticalDist, ab.__horizontalDist, ab.__actualDist)
+            if ab.__actualDist != None:
+                if DEBUG: print "ab.__actualDist(%s) != None" % ab.__actualDist
+                if candidateBall == None or ab.__actualDist < candidateBall.__actualDist:
+                    if candidateBall != None:
+                        if DEBUG: print "candidateBall(%s) == None or ab.__actualDist(%.2f) < candidateBall.__actualDist(%.2f) is True." % (candidateBall, ab.__actualDist, candidateBall.__actualDist)
+                    else:
+                        if DEBUG: print "candidateBall(None) == None is True."
+                    if dd > ab.__actualDist:
+                        if DEBUG: print "dd(%.2f) > ab.__actualDist(%.2f) is True." % (dd, ab.__actualDist)
+                        candidateBall = ab
+                        if DEBUG: print "new candidate ball:", candidateBall
+                    else:
+                        if DEBUG: print "dd(%.2f) > ab.__actualDist(%.2f) is False." % (dd, ab.__actualDist)
+                        if DEBUG: print "candidate ball is still:", candidateBall
+                else:
+                    if DEBUG: print "candidateBall(%s) == None or ab.__actualDist(%.2f) < candidateBall.__actualDist(%.2f) is False. Skipping ab(%s)" % (candidateBall, ab.__actualDist, candidateBall.__actualDist, ab)
+            else:
+                if DEBUG: print "ab.__actualDist is None"
+            if DEBUG: print "--next-candidate--"
+        if DEBUG: print "final candidateBall = ", candidateBall
+        if DEBUG: print
+        if candidateBall != None:
+            x_a, y_a = pos
+            x_b, y_b = prevPos
+            assert candidateBall.__actualDist != None, "%s does not have __actualDist" % ab
+            final_x = (candidateBall.__actualDist*(x_a-x_b) + dd*x_b) / dd
+            final_y = (candidateBall.__actualDist*(y_a-y_b) + dd*y_b) / dd
+            if DEBUG: print "final position becomes: ", (final_x, final_y)
+            return candidateBall, (final_x, final_y)
+        else:
+            return None, None
+
+    def step(self, dt):        
+        self.hexameshLayer.prevRotation = self.hexameshLayer.rotation
+        self.hexameshLayer.rotation = self.hexameshLayer.lastReportedRotation
+        
+        for freeBall in self.freeBalls:
+            freeBall.moveByDeltaTime(dt)
+            attachedBall, collidePosition = self.checkCollision(freeBall)
+            if attachedBall != None:
+                if attachedBall.hexagrid.distance >= LEVEL:
+                    print "GAME OVER!!!"
+                    exit()
+                self.removeBall(freeBall)
+                freeBall.position = collidePosition
+                self.connect(attachedBall, freeBall)
+                self.hexameshLayer.addBall(freeBall)
+                group = freeBall.hexagrid.sameColorGroup()
+                if len(group) >= 3:
+                    self.addToPoppingBalls([h.ball for h in group])
+            for ab in self.hexameshLayer.attachedBalls: ab.__verticalDist, ab.__horizontalDist = None, None
         self.updatePoppingBalls(dt)
         self.createBallLogic(dt)
+        if DEBUG: print "-----------------------step-------------------------"
+        if DEBUG: print "attachedBalls: ", self.hexameshLayer.attachedBalls
 
     def addBall(self, ball):
         self.add(ball.sprite)
@@ -263,10 +325,9 @@ class GameLayer(Layer):
         self.freeBalls.remove(ball)
     
 if __name__ == "__main__":
-    director.init(width=GAME_AREA_RADIUS*2, height=GAME_AREA_RADIUS*2, resizable=True)
+    director.init(width=GAME_AREA_RADIUS*2, height=GAME_AREA_RADIUS*4, resizable=True)
     filename = None
     if len(sys.argv) > 1:
         filename = sys.argv[1]
     gameLayer = GameLayer(filename)
     director.run(Scene(gameLayer, gameLayer.hexameshLayer))
-
