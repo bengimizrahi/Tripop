@@ -1,54 +1,15 @@
+jump 0
+jump 0
+insert RED
 jump 4
-insert RED
-
-jump 5
-insert RED
-
-jump 1
-insert RED
-
-jump 1
-insert RED
-
-jump 2
-insert RED
-
-jump 1
-insert BLUE
-
-jump 2
-insert BLUE
-
+insert RED RED
 jump 3
-insert RED
-
+insert RED RED
 jump 2
-insert RED
-
+insert RED RED
 jump 1
-insert RED
-
+insert RED RED
 jump 0
-insert RED
-
-jump 0
-insert RED
-
-jump 5
-jump 5
+insert RED RED
 jump 5
 insert RED
-
-jump 5
-insert RED
-
-jump 5
-insert RED
-
-jump 4
-insert RED
-
-jump 2
-jump 2
-jump 2
-insert BLUE

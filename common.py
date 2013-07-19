@@ -9,6 +9,7 @@ FOUR_RADIUS_SQR = 4 * (BALL_RADIUS**2)
 INITIAL_BALL_DISTANCE = 100
 INITIAL_BALL_SPEED = 40
 LEVEL = 8
+MOUSE_SENSITIVITY = 1
 BALL_TYPE_CORE, BALL_TYPE_POPPING_BALL, BALL_TYPE_RED, BALL_TYPE_YELLOW, BALL_TYPE_GREEN, BALL_TYPE_BLUE = range(6)
 RELPOS6 = [
     (2*BALL_RADIUS*math.cos(math.pi/6), 2*BALL_RADIUS*math.sin(math.pi/6)),
@@ -40,3 +41,8 @@ def IdGenerator():
         yield nextId
         nextId += 1
 
+def convertCoord(position, fromLayer, toLayer):
+        x, y = position
+        angle = (-fromLayer.rotation + toLayer.rotation)/180.0*math.pi
+        nx, ny = math.cos(angle)*x - math.sin(angle)*y, math.sin(angle)*x + math.cos(angle)*y
+        return nx, ny

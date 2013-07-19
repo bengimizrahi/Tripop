@@ -8,6 +8,7 @@ from cocos.layer import *
 from cocos.scene import Scene
 from cocos.actions.base_actions import *
 from cocos.actions.interval_actions import *
+from cocos.actions.instant_actions import *
 from cocos.sprite import Sprite
 from cocos.euclid import *
 import pyglet
@@ -28,10 +29,9 @@ class CreateBallLogic:
     def __call__(self, dt):
         self.createBallTimer += dt
         if (self.createBallTimer > self.createBallInterval):
-            self.createBallInterval = max(1.0, self.createBallInterval-0.1)
+            self.createBallInterval = max(1, self.createBallInterval-0.1)
             self.createBallTimer = 0.0
             angle = 2*math.pi*random.random()
-            angle = math.pi
             type = random.choice([BALL_TYPE_RED, BALL_TYPE_GREEN, BALL_TYPE_YELLOW, BALL_TYPE_BLUE])
             newBall = createBall(angle, self.ballSpeed, type)
             self.gameLayer.addBall(newBall)
@@ -42,8 +42,8 @@ class HexameshLayer(Layer):
 
     def __init__(self):
         super(HexameshLayer, self).__init__()
-        width, height = director.get_window_size()
-        self.children_anchor = width/2, height/2
+        self.position = 0, 80
+        self.children_anchor = 160, 240
 
         self.hexamesh = Hexamesh(LEVEL, self)
         self.add(self.hexamesh.center.ball.sprite)
@@ -66,23 +66,26 @@ class HexameshLayer(Layer):
             DEBUG = not DEBUG 
         
     def on_mouse_motion(self, x, y, dx, dy):
-        self.lastReportedRotation = self.rotation + 180.0/GAME_AREA_RADIUS*dx
+        self.lastReportedRotation = self.rotation + 180.0/GAME_AREA_RADIUS*dx*MOUSE_SENSITIVITY
         
 class GameLayer(Layer):
 
     def __init__(self, filename):
         super(GameLayer, self).__init__()
-        width, height = director.get_window_size()
-        self.children_anchor = width/2, height/2
+        self.image = pyglet.resource.image('Images/GameLayerImage.png')
+        self.position = 0, 80
+        self.children_anchor = 160, 240
 
-        self.info = cocos.text.Label("Info", x=-150, y=-150);
-        self.add(self.info);
         self.freeBalls = []
         self.createBallLogic = CreateBallLogic(self)
         self.schedule(self.step)
         self.hexameshLayer = HexameshLayer()
+        self.infoLayer = InfoLayer()
         if filename != None:
             self.fill(filename)
+
+    def draw(self):
+        self.image.blit(0, 0)
 
     def fill(self, filename):
         f = open(filename, 'r')
@@ -145,6 +148,19 @@ class GameLayer(Layer):
         freeBall.velocity *= 0
     
     def addToPoppingBalls(self, balls):
+        def avg(balls):
+	    sum_x, sum_y = 0, 0
+	    for b in balls:
+		x, y = b.position
+		sum_x += x 
+		sum_y += y
+	    avg_x, avg_y = sum_x/len(balls), sum_y/len(balls)
+	    avg_x, avg_y = convertCoord((avg_x, avg_y), self.hexameshLayer, self.infoLayer)
+            return avg_x, avg_y
+        
+	points = len(balls)*5
+        self.infoLayer.addToScore(points)
+        self.infoLayer.animatePoints(points, avg(balls))
         for b in balls: b.goingToPop = True
         self.hexameshLayer.poppingBalls.extend(balls)
         
@@ -237,7 +253,7 @@ class GameLayer(Layer):
             if DEBUG: print "t = ", t
             dd = math.sqrt(t[0]**2+t[1]**2)
             if DEBUG: print "dd = ", dd
-            assert dd > 0, "dd must not be 0."
+            assert dd > 0, "dd(%.2f) must be 0." % dd
             t = t[0]/dd, t[1]/dd
             if DEBUG: print "t = ", t
             n = -t[1], t[0]
@@ -256,6 +272,7 @@ class GameLayer(Layer):
             
         pos = ball.positionOnLayer(self.hexameshLayer)
         prevPos = ball.prevPositionOnLayer(self.hexameshLayer)
+
         candidateBall = None
         for ab in self.hexameshLayer.attachedBalls:
             dd, ab.__verticalDist, ab.__horizontalDist, ab.__actualDist = pdis(pos, prevPos, ab.position)
@@ -292,7 +309,9 @@ class GameLayer(Layer):
         else:
             return None, None
 
-    def step(self, dt):        
+    def step(self, dt):
+        if dt == 0:
+            if DEBUG: print "dt == 0, do nothing"
         self.hexameshLayer.prevRotation = self.hexameshLayer.rotation
         self.hexameshLayer.rotation = self.hexameshLayer.lastReportedRotation
         
@@ -323,11 +342,46 @@ class GameLayer(Layer):
     def removeBall(self, ball):
         self.remove(ball.sprite)
         self.freeBalls.remove(ball)
-    
+
+class InfoLayer(Layer):
+
+    def __init__(self):
+        super(InfoLayer, self).__init__()
+        self.position = 0, 80
+        self.children_anchor = 160, 240
+
+        self.score = 0
+        self.hiscore = 0
+        self.scoreLabel = cocos.text.Label("%06d" % self.score, x=-155, y=145)
+        self.hiscoreLabel = cocos.text.Label("HI:%06d" % self.hiscore, x=80, y=145)
+        self.add(self.scoreLabel)
+        self.add(self.hiscoreLabel)
+
+    def animatePoints(self, points, position):
+        @CallFuncS
+        def removeObj(object):
+            self.remove(object)
+	
+        label = cocos.text.Label(str(points), x=position[0], y=position[1], anchor_x='center', anchor_y='center')
+        label.visible = False
+        self.add(label)
+        action1 = Hide() + Delay(0.25) + Show()
+        action2 = Delay(0.25) + ScaleBy(1.5, 0.5)
+        action3 = Delay(0.75) + removeObj
+        label.do(action1 | action2 | action3)
+
+    def addToScore(self, points):
+        self.score += points
+        self.scoreLabel.element.text = "%06d" % self.score
+        if self.score > self.hiscore:
+            self.hiscore = self.score
+            self.hiscoreLabel.element.text = "HI:%06d" % self.hiscore
+        
+        
 if __name__ == "__main__":
-    director.init(width=GAME_AREA_RADIUS*2, height=GAME_AREA_RADIUS*4, resizable=True)
+    director.init(width=GAME_AREA_RADIUS*2, height=GAME_AREA_RADIUS*3, resizable=True)
     filename = None
     if len(sys.argv) > 1:
         filename = sys.argv[1]
     gameLayer = GameLayer(filename)
-    director.run(Scene(gameLayer, gameLayer.hexameshLayer))
+    director.run(Scene(gameLayer, gameLayer.hexameshLayer, gameLayer.infoLayer))
